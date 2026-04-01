@@ -673,6 +673,140 @@
   .progress-bar .fill { height: 100%; border-radius: 2px; background: var(--tan); transition: width 0.4s; }
   .progress-bar .fill.low { background: var(--accent-red); }
   .progress-bar .fill.mid { background: var(--accent-amber); }
+
+  /* ===== AUTH / LOGIN ===== */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9000;
+    background: var(--dark-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #login-screen.hidden { display: none; }
+
+  .login-box {
+    background: var(--panel-bg);
+    border: 1px solid var(--tan);
+    width: 100%; max-width: 420px;
+    padding: 0;
+  }
+  .login-header {
+    background: var(--army-green);
+    border-bottom: 2px solid var(--tan);
+    padding: 20px 24px 16px;
+    text-align: center;
+  }
+  .login-header .login-crest {
+    width: 44px; height: 44px;
+    background: var(--tan);
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: bold; font-size: 12px;
+    color: var(--dark-bg); margin: 0 auto 10px;
+  }
+  .login-header h2 {
+    font-family: var(--display); font-weight: 900; font-size: 16px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+  }
+  .login-header .login-unit {
+    font-family: var(--mono); font-size: 9px; color: var(--tan);
+    letter-spacing: 2px; margin-top: 4px;
+  }
+  .login-body { padding: 24px; }
+
+  .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .user-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border);
+    cursor: pointer; transition: all 0.12s; width: 100%; text-align: left;
+  }
+  .user-btn:hover { border-color: var(--tan); background: rgba(196,169,107,0.06); }
+  .user-btn.selected { border-color: var(--tan); background: rgba(196,169,107,0.1); }
+  .user-btn .ub-avatar {
+    width: 32px; height: 32px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; font-weight: bold;
+    flex-shrink: 0;
+  }
+  .ub-avatar.role-co    { background: rgba(192,57,43,0.3);  color: var(--accent-red); }
+  .ub-avatar.role-qm    { background: rgba(212,147,10,0.3); color: var(--accent-amber); }
+  .ub-avatar.role-cadet { background: rgba(36,113,163,0.3); color: #5BA4D4; }
+  .ub-avatar.role-ro    { background: rgba(59,74,47,0.6);   color: var(--text-secondary); }
+  .user-btn .ub-info { flex: 1; }
+  .user-btn .ub-name { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 1px; color: var(--text-primary); }
+  .user-btn .ub-role { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+
+  .pin-dots { display: flex; gap: 10px; justify-content: center; margin: 12px 0; }
+  .pin-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--panel-border); background: transparent;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .pin-dot.filled { background: var(--tan); border-color: var(--tan); }
+
+  .pin-pad {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 12px;
+  }
+  .pin-key {
+    padding: 12px; text-align: center; cursor: pointer;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border);
+    font-family: var(--display); font-weight: 700; font-size: 18px;
+    color: var(--text-primary); transition: all 0.1s;
+    user-select: none;
+  }
+  .pin-key:hover  { background: rgba(196,169,107,0.12); border-color: var(--tan); }
+  .pin-key:active { background: rgba(196,169,107,0.25); }
+  .pin-key.del    { font-size: 14px; color: var(--text-secondary); }
+  .pin-key.zero   { grid-column: 2; }
+
+  .login-error {
+    font-family: var(--mono); font-size: 11px; color: var(--accent-red);
+    text-align: center; min-height: 18px; margin-top: 8px;
+  }
+
+  /* Session bar in header */
+  .session-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 10px;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border);
+    cursor: pointer;
+  }
+  .session-bar:hover { border-color: var(--tan); }
+  .session-bar .sb-name { font-family: var(--mono); font-size: 10px; color: var(--text-primary); }
+  .session-bar .sb-role { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+  .sb-avatar {
+    width: 22px; height: 22px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 9px; font-weight: bold;
+  }
+
+  /* Role badge */
+  .role-badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; letter-spacing: 1px; text-transform: uppercase; }
+  .role-badge.role-co    { background: rgba(192,57,43,0.2);  border: 1px solid var(--accent-red);   color: var(--accent-red); }
+  .role-badge.role-qm    { background: rgba(212,147,10,0.2); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
+  .role-badge.role-cadet { background: rgba(36,113,163,0.2); border: 1px solid #5BA4D4;             color: #5BA4D4; }
+  .role-badge.role-ro    { background: rgba(90,90,72,0.3);   border: 1px solid var(--text-dim);     color: var(--text-dim); }
+
+  /* Locked overlay for restricted sections */
+  .perm-locked {
+    opacity: 0.35; pointer-events: none; position: relative;
+  }
+  .perm-locked::after {
+    content: '⛔ INSUFFICIENT CLEARANCE';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; color: var(--accent-red);
+    letter-spacing: 2px; background: rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+
+  /* Pending request card */
+  .request-card {
+    background: rgba(36,113,163,0.08); border: 1px solid rgba(36,113,163,0.4);
+    padding: 12px; margin-bottom: 8px;
+  }
+  .request-card .rc-title { font-family: var(--display); font-weight: 700; font-size: 13px; color: #5BA4D4; }
+  .request-card .rc-meta  { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -690,6 +824,13 @@
     </div>
     <div class="header-status">
       <span class="status-pill unit" id="unit-name-badge">1 ACTU</span>
+      <div class="session-bar" id="session-bar" onclick="showLogoutConfirm()" title="Click to sign out">
+        <div class="sb-avatar role-co" id="session-avatar">?</div>
+        <div>
+          <div class="sb-name" id="session-name">Not signed in</div>
+          <div class="sb-role" id="session-role">—</div>
+        </div>
+      </div>
       <span class="status-pill sync-off" id="sync-status-pill" onclick="syncPillClicked()" title="OneDrive Sync">☁ NOT CONFIGURED</span>
       <span class="status-pill online">● SYSTEM ONLINE</span>
     </div>
@@ -697,16 +838,69 @@
   <nav>
     <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
     <button class="nav-tab" onclick="showPage('inventory')">Inventory Register</button>
-    <button class="nav-tab" onclick="showPage('issue')">Issue / Return</button>
+    <button class="nav-tab" id="nav-issue"   onclick="showPage('issue')">Issue / Return</button>
     <button class="nav-tab" onclick="showPage('loans')">Active Loans</button>
-    <button class="nav-tab" onclick="showPage('cadets')">Cadet Register</button>
+    <button class="nav-tab" id="nav-cadets"  onclick="showPage('cadets')">Cadet Register</button>
     <button class="nav-tab" onclick="showPage('reports')">Reports & DA Forms</button>
     <button class="nav-tab" onclick="showPage('qr')">QR / Labels</button>
-    <button class="nav-tab" onclick="showPage('import')">CSV Import</button>
+    <button class="nav-tab" id="nav-import"  onclick="showPage('import')">CSV Import</button>
     <button class="nav-tab" onclick="showPage('audit')">Audit Log</button>
-    <button class="nav-tab" onclick="showPage('settings')">Settings</button>
+    <button class="nav-tab" id="nav-users"   onclick="showPage('users')">Users</button>
+    <button class="nav-tab" id="nav-settings" onclick="showPage('settings')">Settings</button>
   </nav>
 </header>
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-crest">AAC</div>
+      <h2>Q-Store IMS</h2>
+      <div class="login-unit" id="login-unit-name">Australian Army Cadets</div>
+    </div>
+    <div class="login-body">
+      <!-- Step 1: select user -->
+      <div id="login-step-select">
+        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Select Account</div>
+        <div class="user-list" id="login-user-list"></div>
+        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;font-family:var(--mono);">
+          Contact your QM or CO to create an account.
+        </div>
+      </div>
+      <!-- Step 2: enter PIN -->
+      <div id="login-step-pin" style="display:none">
+        <div class="flex-row mb-12" style="gap:8px;align-items:center;">
+          <button class="btn btn-secondary btn-sm" onclick="loginBack()">← Back</button>
+          <span style="font-family:var(--display);font-weight:700;font-size:14px;" id="pin-user-label"></span>
+        </div>
+        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-align:center;margin-bottom:6px;">ENTER PIN</div>
+        <div class="pin-dots" id="pin-dots">
+          <div class="pin-dot" id="pd0"></div>
+          <div class="pin-dot" id="pd1"></div>
+          <div class="pin-dot" id="pd2"></div>
+          <div class="pin-dot" id="pd3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('1')">1</div>
+          <div class="pin-key" onclick="pinKey('2')">2</div>
+          <div class="pin-key" onclick="pinKey('3')">3</div>
+          <div class="pin-key" onclick="pinKey('4')">4</div>
+          <div class="pin-key" onclick="pinKey('5')">5</div>
+          <div class="pin-key" onclick="pinKey('6')">6</div>
+          <div class="pin-key" onclick="pinKey('7')">7</div>
+          <div class="pin-key" onclick="pinKey('8')">8</div>
+          <div class="pin-key" onclick="pinKey('9')">9</div>
+          <div class="pin-key del" onclick="pinDel()">⌫</div>
+          <div class="pin-key zero" onclick="pinKey('0')">0</div>
+        </div>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+  </div>
+  <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:16px;letter-spacing:1px;">
+    IMS v3.2 · OFFICIAL USE ONLY · ALL ACCESS LOGGED
+  </div>
+</div>
 
 <main>
 
@@ -761,7 +955,7 @@
           <option value="ICT">ICT</option>
           <option value="ICT">ICT</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-item')">+ Add Item</button>
+        <button class="btn btn-primary btn-sm" id="add-item-btn" onclick="openModal('modal-add-item')">+ Add Item</button>
       </div>
     </div>
     <div class="panel-body">
@@ -795,6 +989,8 @@
 
 <!-- ====== ISSUE / RETURN ====== -->
 <div id="page-issue" class="page">
+  <!-- QM / Staff panel -->
+  <div id="issue-panel-qm">
   <div class="two-col">
     <div>
       <div class="panel">
@@ -890,6 +1086,57 @@
       </div>
     </div>
   </div>
+  </div><!-- /issue-panel-qm -->
+
+  <!-- Cadet self-service request panel -->
+  <div id="issue-panel-cadet" style="display:none">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Request Equipment Issue</span></div>
+      <div class="panel-body">
+        <div class="alert-box info mb-12">
+          <div class="alert-title">Cadet Self-Service</div>
+          Submit a request to the QM for equipment issue. Your QM will review and approve or deny the request. You will be able to collect once approved.
+        </div>
+        <div class="form-grid cols-2">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Item <span class="req">*</span></label>
+            <select class="form-select" id="req-item"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity</label>
+            <input type="number" class="form-input" id="req-qty" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Purpose</label>
+            <select class="form-select" id="req-purpose">
+              <option>Annual Camp</option>
+              <option>Training Activity</option>
+              <option>Parade Night</option>
+              <option>Field Exercise</option>
+              <option>Ceremonial</option>
+              <option>Course Attendance</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Remarks</label>
+            <textarea class="form-textarea" id="req-remarks-cadet" placeholder="Reason for request, special requirements..."></textarea>
+          </div>
+        </div>
+        <div class="mt-12">
+          <button class="btn btn-primary" onclick="submitIssueRequest()">Submit Request</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cadet's own loans -->
+    <div class="panel mt-12">
+      <div class="panel-header"><span class="panel-title">My Current Loans</span></div>
+      <div class="panel-body" id="cadet-own-loans">
+        <div class="text-muted text-mono">Sign in with a linked cadet account to view loans.</div>
+      </div>
+    </div>
+  </div><!-- /issue-panel-cadet -->
 </div>
 
 <!-- ====== ACTIVE LOANS ====== -->
@@ -1197,6 +1444,154 @@
         </div>
       </div>
       <div id="audit-log-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== USERS ====== -->
+<div id="page-users" class="page">
+  <div class="alert-box info mb-12">
+    <div class="alert-title">User Account Management</div>
+    Accessible by CO/OC and Quartermaster roles only. PINs are hashed before storage — they cannot be retrieved, only reset. All login/logout events are recorded in the Audit Log.
+  </div>
+
+  <!-- CO-only: Emergency access reset panel -->
+  <div class="panel mb-12" id="co-access-panel" style="border-color:rgba(192,57,43,0.4);">
+    <div class="panel-header" style="background:rgba(192,57,43,0.08)">
+      <span class="panel-title" style="color:var(--accent-red)">⚠ CO/OC — Emergency Access Controls</span>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.8">
+        These controls allow the CO/OC to reset access for any user or lock the entire system. Use in the event of a security incident, personnel change, or lost PIN. All actions are logged.
+      </div>
+      <div class="flex-row" style="flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-amber" onclick="resetAllPinsToDefault()">↺ Reset ALL User PINs to 0000</button>
+        <button class="btn btn-danger" onclick="lockAllOtherSessions()">🔒 Force Sign Out All Users</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:8px;font-family:var(--mono);">
+        PIN reset sets all non-CO accounts to PIN 0000. Users must change their PIN on next login via their profile. Force sign-out invalidates all active sessions immediately.
+      </div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">System Users</span>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-user')">+ Add User</button>
+      </div>
+      <div class="panel-body">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Linked Cadet Svc No.</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Role Permissions Reference</span></div>
+      <div class="panel-body" style="font-size:12px;line-height:1.9;color:var(--text-secondary);">
+        <div style="margin-bottom:10px">
+          <span class="role-badge role-co">CO / OC</span>
+          <span style="margin-left:8px">Full access — read, write, delete, manage users, settings, all reports</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <span class="role-badge role-qm">QM Staff</span>
+          <span style="margin-left:8px">Manage inventory, issue/return, cadets, reports, audit log. Cannot delete items, manage users or change settings.</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <span class="role-badge role-cadet">Q-Store Cadet</span>
+          <span style="margin-left:8px">View inventory and reports (read-only). View own loans. Submit issue requests for QM approval. Cannot edit, delete or access settings.</span>
+        </div>
+        <div>
+          <span class="role-badge role-ro">Read-Only</span>
+          <span style="margin-left:8px">View-only access to inventory, loans, and reports. No changes of any kind.</span>
+        </div>
+        <hr class="divider">
+        <div class="text-mono" style="font-size:9px;color:var(--tan);letter-spacing:2px;margin-bottom:6px;">PENDING ISSUE REQUESTS</div>
+        <div id="pending-requests-panel"><div class="text-muted text-mono">No pending requests.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="modal-add-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add System User</span>
+      <button class="modal-close" onclick="closeModal('modal-add-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="req">*</span></label>
+          <input type="text" class="form-input" id="new-user-name" placeholder="e.g. SGT Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username <span class="req">*</span></label>
+          <input type="text" class="form-input" id="new-user-username" placeholder="e.g. ssmith (no spaces)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role <span class="req">*</span></label>
+          <select class="form-select" id="new-user-role">
+            <option value="co">CO / OC</option>
+            <option value="qm" selected>QM Staff</option>
+            <option value="cadet">Q-Store Cadet</option>
+            <option value="ro">Read-Only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Linked Cadet Svc No.</label>
+          <input type="text" class="form-input" id="new-user-svc" placeholder="Optional — links to cadet record">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN (4 digits) <span class="req">*</span></label>
+          <input type="password" class="form-input" id="new-user-pin" maxlength="4" placeholder="••••" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm PIN <span class="req">*</span></label>
+          <input type="password" class="form-input" id="new-user-pin2" maxlength="4" placeholder="••••" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset PIN Modal -->
+<div class="modal-overlay" id="modal-reset-pin">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Reset PIN</span>
+      <button class="modal-close" onclick="closeModal('modal-reset-pin')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reset-pin-uid">
+      <div class="form-group mb-12">
+        <label class="form-label">New PIN (4 digits) <span class="req">*</span></label>
+        <input type="password" class="form-input" id="reset-pin-val" maxlength="4" placeholder="••••" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm PIN <span class="req">*</span></label>
+        <input type="password" class="form-input" id="reset-pin-val2" maxlength="4" placeholder="••••" inputmode="numeric">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-reset-pin')">Cancel</button>
+      <button class="btn btn-primary" onclick="resetPin()">Set New PIN</button>
     </div>
   </div>
 </div>
@@ -1582,7 +1977,9 @@ let state = {
   cadets: [],
   loans: [],
   auditLog: [],
-  loanCounter: 1000
+  loanCounter: 1000,
+  users: [],
+  pendingRequests: []
 };
 
 // ===================================================================
@@ -1988,13 +2385,389 @@ const OD = {
   }
 };
 
-// ===== SEED DATA — empty state for fresh deployment =====
+// =====================================================================
+// AUTH ENGINE — Role-Based Access Control
+// Roles: co | qm | cadet | ro
+// PINs stored as djb2 hash — deterministic deterrent appropriate for
+// unit Q-store access control + full audit trail accountability.
+// =====================================================================
+const AUTH = {
+  session: null,
+
+  ROLES: {
+    co:    { label: 'CO / OC',       short: 'CO'  },
+    qm:    { label: 'QM Staff',      short: 'QM'  },
+    cadet: { label: 'Q-Store Cadet', short: 'CDT' },
+    ro:    { label: 'Read-Only',     short: 'R/O' }
+  },
+
+  PERMS: {
+    co:    ['all'],
+    qm:    ['view','issue','return','addItem','editItem','manageCadets','reports','audit','qr','import'],
+    cadet: ['view','viewOwnLoans','requestIssue','reports'],
+    ro:    ['view','reports']
+  },
+
+  hashPin(pin) {
+    let h = 5381;
+    for (let i = 0; i < pin.length; i++) h = ((h << 5) + h) ^ pin.charCodeAt(i);
+    return (h >>> 0).toString(36);
+  },
+
+  can(perm) {
+    if (!this.session) return false;
+    const perms = this.PERMS[this.session.role] || [];
+    return perms.includes('all') || perms.includes(perm);
+  },
+
+  isAdmin() { return this.session && (this.session.role === 'co' || this.session.role === 'qm'); },
+  isCO()    { return this.session && this.session.role === 'co'; },
+
+  login(userId, pin) {
+    const user = (state.users || []).find(u => u.id === userId);
+    if (!user) return false;
+    if (user.pinHash !== this.hashPin(String(pin))) return false;
+    this.session = { userId: user.id, name: user.name, role: user.role, svcNo: user.svcNo || null, loginTime: new Date().toISOString() };
+    sessionStorage.setItem('qstore_session', JSON.stringify(this.session));
+    user.lastLogin = new Date().toISOString();
+    logAudit('login', `Login: ${user.name} (${this.ROLES[user.role].label})`);
+    save();
+    return true;
+  },
+
+  logout() {
+    if (this.session) { logAudit('login', `Logout: ${this.session.name}`); save(); }
+    this.session = null;
+    sessionStorage.removeItem('qstore_session');
+    showLoginScreen();
+  },
+
+  restoreSession() {
+    try {
+      const s = sessionStorage.getItem('qstore_session');
+      if (s) {
+        const parsed = JSON.parse(s);
+        // Check if CO has force-invalidated all sessions after this login time
+        const invalidatedAt = localStorage.getItem('qstore_session_invalidated_at');
+        if (invalidatedAt && parsed.loginTime < invalidatedAt && parsed.role !== 'co') {
+          sessionStorage.removeItem('qstore_session');
+          return false;
+        }
+        // Verify user still exists and role hasn't changed since login
+        const user = (state.users || []).find(u => u.id === parsed.userId);
+        if (user && user.role === parsed.role) { this.session = parsed; return true; }
+      }
+    } catch(e) {}
+    return false;
+  },
+
+  ensureDefaultAdmin() {
+    if (!state.users) state.users = [];
+    if (!state.pendingRequests) state.pendingRequests = [];
+    if (state.users.length === 0) {
+      state.users.push({
+        id: 'usr-default-co', name: 'Administrator (CO)', username: 'admin',
+        role: 'co', svcNo: '', pinHash: this.hashPin('0000'),
+        lastLogin: null, createdAt: new Date().toISOString()
+      });
+    }
+  }
+};
+
+// =====================================================================
+// LOGIN SCREEN CONTROLLER
+// =====================================================================
+let loginSelectedUser = null;
+let pinBuffer = '';
+
+function showLoginScreen() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  loginSelectedUser = null; pinBuffer = '';
+  renderLoginUserList();
+  document.getElementById('login-step-select').style.display = '';
+  document.getElementById('login-step-pin').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
+  updateSessionBar();
+  applyPermissionsToUI();
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-screen').classList.add('hidden');
+  updateSessionBar();
+  applyPermissionsToUI();
+  renderAll();
+}
+
+function renderLoginUserList() {
+  const list  = document.getElementById('login-user-list');
+  const users = state.users || [];
+  if (!users.length) {
+    list.innerHTML = '<div class="text-muted text-mono" style="text-align:center;padding:16px">No accounts configured.</div>';
+    return;
+  }
+  list.innerHTML = users.map(u => `
+    <button class="user-btn" onclick="selectLoginUser('${u.id}')">
+      <div class="ub-avatar role-${u.role}">${AUTH.ROLES[u.role]?.short || '?'}</div>
+      <div class="ub-info">
+        <div class="ub-name">${u.name}</div>
+        <div class="ub-role">${AUTH.ROLES[u.role]?.label || u.role}${u.svcNo ? ' · ' + u.svcNo : ''}</div>
+      </div>
+    </button>`).join('');
+}
+
+function selectLoginUser(userId) {
+  loginSelectedUser = (state.users || []).find(u => u.id === userId);
+  if (!loginSelectedUser) return;
+  pinBuffer = ''; updatePinDots();
+  document.getElementById('pin-user-label').textContent = loginSelectedUser.name;
+  document.getElementById('login-step-select').style.display = 'none';
+  document.getElementById('login-step-pin').style.display = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function loginBack() {
+  document.getElementById('login-step-select').style.display = '';
+  document.getElementById('login-step-pin').style.display = 'none';
+  loginSelectedUser = null; pinBuffer = '';
+}
+
+function pinKey(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit; updatePinDots();
+  if (pinBuffer.length === 4) setTimeout(attemptLogin, 120);
+}
+
+function pinDel() {
+  pinBuffer = pinBuffer.slice(0,-1); updatePinDots();
+  document.getElementById('login-error').textContent = '';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++)
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinBuffer.length);
+}
+
+function attemptLogin() {
+  if (!loginSelectedUser) return;
+  const ok = AUTH.login(loginSelectedUser.id, pinBuffer);
+  pinBuffer = ''; updatePinDots();
+  if (ok) {
+    hideLoginScreen(); renderUsers();
+  } else {
+    document.getElementById('login-error').textContent = 'Incorrect PIN — try again';
+    const box = document.querySelector('.login-box');
+    box.style.transform = 'translateX(-8px)';
+    setTimeout(() => { box.style.transform = 'translateX(8px)'; }, 80);
+    setTimeout(() => { box.style.transform = ''; box.style.transition = ''; }, 160);
+  }
+}
+
+function showLogoutConfirm() {
+  if (!AUTH.session) return;
+  if (confirm(`Sign out ${AUTH.session.name}?`)) AUTH.logout();
+}
+
+function updateSessionBar() {
+  const s = AUTH.session;
+  document.getElementById('session-name').textContent  = s ? s.name : 'Not signed in';
+  document.getElementById('session-role').textContent  = s ? (AUTH.ROLES[s.role]?.label || s.role) : '—';
+  document.getElementById('session-avatar').textContent = s ? (AUTH.ROLES[s.role]?.short || '?') : '?';
+  document.getElementById('session-avatar').className   = 'sb-avatar role-' + (s ? s.role : 'ro');
+  document.getElementById('login-unit-name').textContent = state.settings?.unitName || 'Australian Army Cadets';
+}
+
+function applyPermissionsToUI() {
+  if (!AUTH.session) return;
+  const show = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis ? '' : 'none'; };
+  show('nav-issue',    AUTH.can('issue') || AUTH.can('requestIssue'));
+  show('nav-cadets',   AUTH.can('manageCadets'));
+  show('nav-import',   AUTH.can('import'));
+  show('nav-users',    AUTH.isAdmin());
+  show('nav-settings', AUTH.isCO());
+  // CO-only emergency panel on Users page
+  show('co-access-panel', AUTH.isCO());
+  // Issue page panels
+  const qmPanel     = document.getElementById('issue-panel-qm');
+  const cadetPanel  = document.getElementById('issue-panel-cadet');
+  if (qmPanel)    qmPanel.style.display    = AUTH.can('issue') ? '' : 'none';
+  if (cadetPanel) cadetPanel.style.display = (AUTH.can('requestIssue') && !AUTH.can('issue')) ? '' : 'none';
+  // Inventory action buttons
+  document.querySelectorAll('.inv-edit-btn').forEach(b => b.style.display = AUTH.can('editItem') ? '' : 'none');
+  document.querySelectorAll('.inv-del-btn').forEach(b  => b.style.display = AUTH.isCO() ? '' : 'none');
+  const addBtn = document.getElementById('add-item-btn');
+  if (addBtn) addBtn.style.display = AUTH.can('addItem') ? '' : 'none';
+}
+
+// =====================================================================
+// USER MANAGEMENT
+// =====================================================================
+function renderUsers() {
+  const tbody = document.getElementById('users-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = (state.users||[]).map(u => `
+    <tr>
+      <td><strong>${u.name}</strong></td>
+      <td class="text-mono">${u.username}</td>
+      <td><span class="role-badge role-${u.role}">${AUTH.ROLES[u.role]?.label||u.role}</span></td>
+      <td class="text-mono">${u.svcNo||'—'}</td>
+      <td class="text-mono" style="font-size:10px;color:var(--text-dim)">
+        ${u.lastLogin ? new Date(u.lastLogin).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}) : 'Never'}
+      </td>
+      <td><div class="flex-row" style="gap:4px">
+        <button class="btn btn-amber btn-sm" onclick="openResetPin('${u.id}')">Reset PIN</button>
+        ${AUTH.isCO() && u.id !== AUTH.session?.userId
+          ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Remove</button>` : ''}
+      </div></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px">No users.</td></tr>';
+  renderPendingRequests();
+}
+
+function addUser() {
+  const name=document.getElementById('new-user-name').value.trim();
+  const username=document.getElementById('new-user-username').value.trim().replace(/\s+/g,'');
+  const role=document.getElementById('new-user-role').value;
+  const svcNo=document.getElementById('new-user-svc').value.trim();
+  const pin=document.getElementById('new-user-pin').value;
+  const pin2=document.getElementById('new-user-pin2').value;
+  if (!name||!username){toast('Name and username are required.','err');return;}
+  if (!/^\d{4}$/.test(pin)){toast('PIN must be exactly 4 digits.','err');return;}
+  if (pin!==pin2){toast('PINs do not match.','err');return;}
+  if ((state.users||[]).find(u=>u.username===username)){toast('Username already exists.','err');return;}
+  if (!state.users) state.users=[];
+  state.users.push({ id:'usr-'+Date.now(), name, username, role, svcNo,
+    pinHash: AUTH.hashPin(pin), lastLogin:null, createdAt:new Date().toISOString() });
+  logAudit('add',`User created: ${name} (${AUTH.ROLES[role].label}) by ${AUTH.session?.name||'system'}`);
+  save(); renderUsers(); closeModal('modal-add-user');
+  ['new-user-name','new-user-username','new-user-svc','new-user-pin','new-user-pin2'].forEach(id=>document.getElementById(id).value='');
+  toast(`User "${name}" created.`);
+}
+
+function openResetPin(uid) {
+  document.getElementById('reset-pin-uid').value=uid;
+  document.getElementById('reset-pin-val').value='';
+  document.getElementById('reset-pin-val2').value='';
+  openModal('modal-reset-pin');
+}
+
+function resetPin() {
+  const uid=document.getElementById('reset-pin-uid').value;
+  const pin=document.getElementById('reset-pin-val').value;
+  const pin2=document.getElementById('reset-pin-val2').value;
+  if (!/^\d{4}$/.test(pin)){toast('PIN must be exactly 4 digits.','err');return;}
+  if (pin!==pin2){toast('PINs do not match.','err');return;}
+  const user=(state.users||[]).find(u=>u.id===uid);
+  if (!user){toast('User not found.','err');return;}
+  user.pinHash=AUTH.hashPin(pin);
+  logAudit('adjust',`PIN reset for: ${user.name} by ${AUTH.session?.name||'system'}`);
+  save(); renderUsers(); closeModal('modal-reset-pin');
+  toast(`PIN reset for ${user.name}.`);
+}
+
+function deleteUser(uid) {
+  const user=(state.users||[]).find(u=>u.id===uid);
+  if (!user) return;
+  if (!confirm(`Remove user "${user.name}"? Cannot be undone.`)) return;
+  state.users=state.users.filter(u=>u.id!==uid);
+  logAudit('adjust',`User removed: ${user.name} by ${AUTH.session?.name}`);
+  save(); renderUsers(); toast(`User "${user.name}" removed.`);
+}
+
+// =====================================================================
+// CADET ISSUE REQUEST SYSTEM
+// =====================================================================
+function populateRequestItems() {
+  const sel = document.getElementById('req-item');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select item —</option>';
+  state.items.forEach(i => {
+    const avail = i.onHand - i.onLoan;
+    if (avail > 0 && i.condition !== 'written-off') {
+      const opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = `${i.name} (${i.nsn}) — Avail: ${avail}`;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function submitIssueRequest() {
+  const itemId  = document.getElementById('req-item').value;
+  const qty     = parseInt(document.getElementById('req-qty').value)||1;
+  const purpose = document.getElementById('req-purpose').value;
+  const remarks = document.getElementById('req-remarks-cadet').value;
+  if (!itemId){toast('Select an item to request.','err');return;}
+  if (!AUTH.session?.svcNo){toast('Your account has no linked cadet record — ask your QM to update it.','err');return;}
+  const item  = state.items.find(i=>i.id===itemId);
+  const cadet = state.cadets.find(c=>c.svcNo===AUTH.session.svcNo);
+  if (!item){toast('Item not found.','err');return;}
+  if (!state.pendingRequests) state.pendingRequests=[];
+  const req = { id:'REQ-'+Date.now(), itemId:item.id, itemName:item.name, nsn:item.nsn, qty,
+    requestorSvc:AUTH.session.svcNo,
+    requestorName: cadet ? `${cadet.rank} ${cadet.surname}` : AUTH.session.name,
+    purpose, remarks, requestedAt:new Date().toISOString(), status:'pending' };
+  state.pendingRequests.push(req);
+  logAudit('add',`Issue request: ${item.name} × ${qty} by ${req.requestorName} for ${purpose}`);
+  save(); renderPendingRequests();
+  toast(`Request ${req.id} submitted — awaiting QM approval.`);
+  document.getElementById('req-item').value='';
+  document.getElementById('req-qty').value='1';
+  document.getElementById('req-remarks-cadet').value='';
+}
+
+function approveRequest(reqId) {
+  const req=(state.pendingRequests||[]).find(r=>r.id===reqId);
+  if (!req) return;
+  const item=state.items.find(i=>i.id===req.itemId);
+  if (!item){toast('Item no longer exists.','err');return;}
+  if (req.qty > item.onHand-item.onLoan){toast(`Insufficient stock — only ${item.onHand-item.onLoan} available.`,'err');return;}
+  const dueDate=prompt('Set due date (YYYY-MM-DD):')||'';
+  const loan={ ref:'LN-'+state.loanCounter++, itemId:item.id, itemName:item.name, nsn:item.nsn,
+    qty:req.qty, borrowerSvc:req.requestorSvc, borrowerName:req.requestorName,
+    purpose:req.purpose, issueDate:new Date().toISOString().slice(0,10), dueDate,
+    condition:'serviceable', active:true, approvedBy:AUTH.session?.name };
+  state.loans.push(loan);
+  item.onLoan+=req.qty;
+  req.status='approved'; req.approvedBy=AUTH.session?.name; req.approvedAt=new Date().toISOString();
+  logAudit('issue',`${loan.ref}: ${item.name} × ${req.qty} issued to ${req.requestorName} (approved ${req.id})`);
+  save(); renderAll(); renderPendingRequests();
+  toast(`Request approved — ${loan.ref} issued.`);
+}
+
+function denyRequest(reqId) {
+  const req=(state.pendingRequests||[]).find(r=>r.id===reqId);
+  if (!req) return;
+  if (!confirm(`Deny request ${req.id}?`)) return;
+  req.status='denied'; req.deniedBy=AUTH.session?.name; req.deniedAt=new Date().toISOString();
+  logAudit('adjust',`Request ${req.id} denied by ${AUTH.session?.name}`);
+  save(); renderPendingRequests(); toast('Request denied.');
+}
+
+function renderPendingRequests() {
+  const el=document.getElementById('pending-requests-panel');
+  if (!el) return;
+  const pending=(state.pendingRequests||[]).filter(r=>r.status==='pending');
+  if (!pending.length){el.innerHTML='<div class="text-muted text-mono">No pending requests.</div>';return;}
+  el.innerHTML=pending.map(r=>`
+    <div class="request-card">
+      <div class="rc-title">${r.itemName} × ${r.qty}</div>
+      <div class="rc-meta">${r.id} · ${r.requestorName} · ${r.purpose}</div>
+      <div class="rc-meta" style="color:var(--text-dim)">${new Date(r.requestedAt).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}</div>
+      ${AUTH.can('issue')?`<div class="flex-row mt-12" style="gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="approveRequest('${r.id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm"  onclick="denyRequest('${r.id}')">✗ Deny</button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+// =====================================================================
 function seedData() {
-  state.items       = [];
-  state.cadets      = [];
-  state.loans       = [];
-  state.auditLog    = [];
-  state.loanCounter = 1000;
+  state.items            = [];
+  state.cadets           = [];
+  state.loans            = [];
+  state.auditLog         = [];
+  state.loanCounter      = 1000;
+  state.users            = [];
+  state.pendingRequests  = [];
 }
 
 // ===== INIT =====
@@ -2003,11 +2776,29 @@ async function init() {
   const saved = localStorage.getItem('qstore_data');
   if (saved) { try { state = JSON.parse(saved); } catch(e) { seedData(); } }
   else { seedData(); }
+
+  // Ensure users/pendingRequests arrays exist for upgrades from older data
+  if (!state.users)           state.users = [];
+  if (!state.pendingRequests) state.pendingRequests = [];
+
+  // Bootstrap default CO account if no users exist
+  AUTH.ensureDefaultAdmin();
+
   loadSettings();
   OD.loadSettingsIntoUI();
   populateRedirectUriDisplay();
+  // Update login screen unit name with loaded settings
+  const loginUnitEl = document.getElementById('login-unit-name');
+  if (loginUnitEl) loginUnitEl.textContent = state.settings?.unitName || 'Australian Army Cadets';
   await OD.init();
-  renderAll();
+
+  // Restore session from sessionStorage or show login
+  if (AUTH.restoreSession()) {
+    hideLoginScreen();
+  } else {
+    showLoginScreen();
+  }
+
   setInterval(updateClock, 1000);
   updateClock();
 }
@@ -2025,6 +2816,38 @@ function renderAll() {
   renderAudit();
   renderAlerts();
   populateIssueItems();
+  populateRequestItems();
+  renderCadetOwnLoans();
+  renderUsers();
+  applyPermissionsToUI();
+}
+
+// Render cadet's own loan records in the self-service panel
+function renderCadetOwnLoans() {
+  const el = document.getElementById('cadet-own-loans');
+  if (!el) return;
+  if (!AUTH.session?.svcNo) {
+    el.innerHTML = '<div class="text-muted text-mono">Your account has no linked cadet record.</div>';
+    return;
+  }
+  const loans = state.loans.filter(l => l.active && l.borrowerSvc === AUTH.session.svcNo);
+  if (!loans.length) {
+    el.innerHTML = '<div class="text-muted text-mono">No active loans on your record.</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  el.innerHTML = loans.map(l => `
+    <div class="loan-card">
+      <div class="lc-qty">${l.qty}</div>
+      <div class="lc-info">
+        <div class="lc-nsn">${l.nsn} · ${l.ref}</div>
+        <div class="lc-name">${l.itemName}</div>
+        <div class="lc-borrower">${l.purpose}</div>
+      </div>
+      <div class="lc-due ${l.dueDate < today ? 'overdue' : 'ok'}">
+        Due: ${l.dueDate || '—'}
+      </div>
+    </div>`).join('');
 }
 
 // ===== CLOCK =====
@@ -2036,10 +2859,25 @@ function updateClock() {
 
 // ===== NAVIGATION =====
 function showPage(id) {
+  // Permission checks for restricted pages
+  const restricted = {
+    'settings': () => AUTH.isCO(),
+    'import':   () => AUTH.can('import'),
+    'cadets':   () => AUTH.can('manageCadets'),
+    'users':    () => AUTH.isAdmin(),
+  };
+  if (restricted[id] && !restricted[id]()) {
+    toast('Insufficient clearance for that section.', 'err');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   event.target.classList.add('active');
+  // Refresh page-specific content
+  if (id === 'issue')  { populateRequestItems(); renderCadetOwnLoans(); }
+  if (id === 'users')  { renderUsers(); }
+  if (id === 'qr')     { renderQrList(); }
 }
 
 // ===== STATS =====
@@ -2140,8 +2978,8 @@ function renderInventory() {
       <td class="text-mono" style="font-size:11px">${item.loc || '—'}</td>
       <td>
         <div class="flex-row" style="gap:4px">
-          <button class="btn btn-secondary btn-sm" onclick="openEditItem(${state.items.indexOf(item)})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteItem(${state.items.indexOf(item)})">Del</button>
+          <button class="btn btn-secondary btn-sm inv-edit-btn" onclick="openEditItem(${state.items.indexOf(item)})">Edit</button>
+          <button class="btn btn-danger btn-sm inv-del-btn" onclick="deleteItem(${state.items.indexOf(item)})">Del</button>
         </div>
       </td>
     </tr>`;
@@ -2150,6 +2988,7 @@ function renderInventory() {
 
 // ===== ADD ITEM =====
 function addItem() {
+  if (!AUTH.can('addItem')) { toast('Insufficient permissions.', 'err'); return; }
   const nsn = document.getElementById('add-nsn').value.trim();
   const name = document.getElementById('add-name').value.trim();
   if (!nsn || !name) { toast('NSN and nomenclature are required.', 'err'); return; }
@@ -2190,6 +3029,7 @@ function openEditItem(idx) {
 }
 
 function saveEditItem() {
+  if (!AUTH.can('editItem')) { toast('Insufficient permissions.', 'err'); return; }
   const idx = parseInt(document.getElementById('edit-idx').value);
   const i = state.items[idx];
   i.nsn = document.getElementById('edit-nsn').value;
@@ -2208,6 +3048,7 @@ function saveEditItem() {
 }
 
 function deleteItem(idx) {
+  if (!AUTH.isCO()) { toast('Only CO/OC can delete inventory items.', 'err'); return; }
   if (!confirm('Delete this inventory item? This cannot be undone.')) return;
   const name = state.items[idx].name;
   state.items.splice(idx, 1);
@@ -2278,6 +3119,7 @@ function populateIssueItems() {
 }
 
 function performIssue() {
+  if (!AUTH.can('issue')) { toast('Insufficient permissions.', 'err'); return; }
   const svc = document.getElementById('issue-svc').value.trim();
   const itemId = document.getElementById('issue-item').value;
   const qty = parseInt(document.getElementById('issue-qty').value);
@@ -2316,6 +3158,7 @@ function performIssue() {
 }
 
 function performReturn() {
+  if (!AUTH.can('return')) { toast('Insufficient permissions.', 'err'); return; }
   const checked = document.querySelectorAll('input[name="ret-loan"]:checked');
   if (!checked.length) { toast('Select at least one loan to return.', 'err'); return; }
   const condition = document.getElementById('return-condition').value;
@@ -2419,6 +3262,7 @@ function renderCadets() {
 }
 
 function addCadet() {
+  if (!AUTH.can('manageCadets')) { toast('Insufficient permissions.', 'err'); return; }
   const svc = document.getElementById('cadet-svc').value.trim();
   const surname = document.getElementById('cadet-surname').value.trim();
   const given = document.getElementById('cadet-given').value.trim();
@@ -2441,6 +3285,7 @@ function addCadet() {
 }
 
 function deleteCadet(svc) {
+  if (!AUTH.can('manageCadets')) { toast('Insufficient permissions.', 'err'); return; }
   const loans = state.loans.filter(l => l.active && l.borrowerSvc === svc);
   if (loans.length) { toast('Cannot remove cadet with active loans.', 'err'); return; }
   if (!confirm('Remove this cadet from the register?')) return;
@@ -2576,8 +3421,44 @@ function saveSettings() {
     state: document.getElementById('set-state').value,
   };
   document.getElementById('unit-name-badge').textContent = state.settings.unitCode;
+  // Also update login screen unit label
+  const loginUnitEl = document.getElementById('login-unit-name');
+  if (loginUnitEl) loginUnitEl.textContent = state.settings.unitName || 'Australian Army Cadets';
   save();
   toast('Unit details saved.');
+}
+
+// ===== CO/OC EMERGENCY ACCESS CONTROLS =====
+
+// Reset ALL non-CO user PINs to 0000 — CO must inform users to change on next login
+function resetAllPinsToDefault() {
+  if (!AUTH.isCO()) { toast('Only CO/OC can perform this action.', 'err'); return; }
+  if (!confirm('Reset ALL user PINs to 0000?\n\nThis affects every account except your own. Inform all users they must sign in with PIN 0000 and request a new PIN from you.')) return;
+  const defaultHash = AUTH.hashPin('0000');
+  let count = 0;
+  (state.users || []).forEach(u => {
+    if (u.id !== AUTH.session.userId) {
+      u.pinHash = defaultHash;
+      u.pinResetRequired = true; // flag for future "force change on login" feature
+      count++;
+    }
+  });
+  logAudit('adjust', `EMERGENCY: All user PINs reset to default by ${AUTH.session.name}. ${count} accounts affected.`);
+  save(); renderUsers();
+  toast(`${count} user PINs reset to 0000.`, 'warn');
+}
+
+// Force sign-out all users by clearing the shared session invalidation timestamp.
+// Any session older than this timestamp will be rejected on next page interaction.
+function lockAllOtherSessions() {
+  if (!AUTH.isCO()) { toast('Only CO/OC can perform this action.', 'err'); return; }
+  if (!confirm('Force sign out ALL other active sessions immediately?\n\nAny other users currently logged in will be signed out on their next action.')) return;
+  // Store a global invalidation timestamp — all sessions with loginTime before this are rejected
+  const ts = new Date().toISOString();
+  localStorage.setItem('qstore_session_invalidated_at', ts);
+  logAudit('adjust', `EMERGENCY: All sessions force-invalidated by ${AUTH.session.name} at ${ts}`);
+  save();
+  toast('All other sessions have been invalidated.', 'warn');
 }
 
 // ===== ONEDRIVE UI HANDLERS =====
@@ -2762,12 +3643,22 @@ function importData(event) {
 }
 
 function clearData() {
-  if (!confirm('⚠ This will permanently erase all inventory data. Are you absolutely sure?')) return;
-  if (!confirm('FINAL CONFIRMATION: Clear all Q-Store data?')) return;
-  localStorage.removeItem('qstore_data');
+  if (!AUTH.isCO()) { toast('Only CO/OC can clear all data.', 'err'); return; }
+  if (!confirm('⚠ This will permanently erase all inventory data (items, cadets, loans, audit log).\n\nUser accounts will be preserved. Are you absolutely sure?')) return;
+  if (!confirm('FINAL CONFIRMATION: Clear all Q-Store inventory data?')) return;
+  // Preserve users and settings — only wipe operational data
+  const preservedUsers    = state.users || [];
+  const preservedSettings = state.settings;
+  const preservedPending  = [];
   seedData();
+  state.users           = preservedUsers;
+  state.settings        = preservedSettings;
+  state.pendingRequests = preservedPending;
+  save();
   loadSettings(); renderAll();
-  toast('All data cleared. Register is now empty.', 'warn');
+  logAudit('adjust', `All inventory data cleared by ${AUTH.session?.name}`);
+  save();
+  toast('Inventory data cleared. User accounts preserved.', 'warn');
 }
 
 // ===== MODAL HELPERS =====
