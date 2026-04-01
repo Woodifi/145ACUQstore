@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Store IMS — Australian Army Cadets</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- MSAL Browser v2 — loaded synchronously so it is available before any app code runs.
+     No integrity hash: avoids SRI mismatch blocking the script silently.
+     Primary CDN: Microsoft's own MSAL CDN. Fallback: jsDelivr mirror. -->
+<script>
+(function() {
+  function loadScript(src, onload, onerror) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onload;
+    s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+  var primary  = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+  var fallback = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js';
+  window.__msalReady = false;
+  loadScript(primary, function() {
+    window.__msalReady = true;
+  }, function() {
+    console.warn('MSAL primary CDN failed, trying fallback...');
+    loadScript(fallback, function() {
+      window.__msalReady = true;
+    }, function() {
+      console.error('MSAL failed to load from both CDNs. OneDrive sync will be unavailable.');
+      window.__msalReady = false;
+    });
+  });
+})();
+</script>
+<style>
+  :root {
+    --army-green: #3B4A2F;
+    --olive: #4A5C35;
+    --field-green: #5A6E40;
+    --tan: #C4A96B;
+    --khaki: #B8A86A;
+    --sand: #D4C08A;
+    --dark-bg: #1A1F14;
+    --panel-bg: #232B1A;
+    --panel-border: #3B4A2F;
+    --text-primary: #E8E0CC;
+    --text-secondary: #9A9A80;
+    --text-dim: #5A5A48;
+    --accent-amber: #D4930A;
+    --accent-red: #C0392B;
+    --accent-green: #27AE60;
+    --accent-blue: #2471A3;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Barlow Condensed', sans-serif;
+    --body: 'Barlow', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    font-family: var(--body);
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--army-green);
+    border-bottom: 3px solid var(--tan);
+    padding: 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 24px;
+    background: var(--dark-bg);
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .header-classification {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent-amber);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-datetime {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .header-main {
+    display: flex; align-items: center; gap: 20px;
+    padding: 12px 24px;
+  }
+
+  .unit-crest {
+    width: 52px; height: 52px;
+    background: var(--tan);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--dark-bg);
+    flex-shrink: 0;
+  }
+
+  .header-title h1 {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .header-title .subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--tan);
+    letter-spacing: 2px;
+    margin-top: 3px;
+  }
+
+  .header-status {
+    margin-left: auto;
+    display: flex; gap: 20px; align-items: center;
+  }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-pill.online { background: rgba(39,174,96,0.2); border: 1px solid var(--accent-green); color: var(--accent-green); }
+  .status-pill.unit { background: rgba(212,147,10,0.15); border: 1px solid var(--tan); color: var(--tan); }
+  .status-pill.sync-ok { background: rgba(39,174,96,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); cursor:pointer; }
+  .status-pill.sync-busy { background: rgba(36,113,163,0.2); border: 1px solid var(--accent-blue); color: #5BA4D4; cursor:default; }
+  .status-pill.sync-err { background: rgba(192,57,43,0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor:pointer; }
+  .status-pill.sync-off { background: rgba(90,90,72,0.3); border: 1px solid var(--text-dim); color: var(--text-dim); cursor:pointer; }
+  .status-pill.sync-dirty { background: rgba(212,147,10,0.15); border: 1px solid var(--accent-amber); color: var(--accent-amber); cursor:pointer; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display:inline-block; animation: spin 1s linear infinite; }
+
+  /* OneDrive setup panel */
+  .onedrive-setup-card {
+    background: rgba(36,113,163,0.08);
+    border: 1px solid rgba(36,113,163,0.4);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .onedrive-setup-card .od-title {
+    font-family: var(--display); font-weight: 700; font-size: 14px;
+    letter-spacing: 2px; text-transform: uppercase; color: #5BA4D4; margin-bottom: 4px;
+  }
+  .sync-log-entry { font-family: var(--mono); font-size: 10px; color: var(--text-dim); padding: 3px 0; border-bottom: 1px solid rgba(59,74,47,0.15); }
+  .sync-log-entry .sl-time { color: var(--text-dim); margin-right: 8px; }
+  .sync-log-entry .sl-ok { color: var(--accent-green); }
+  .sync-log-entry .sl-err { color: var(--accent-red); }
+  .sync-log-entry .sl-info { color: #5BA4D4; }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    padding: 0 24px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--panel-border);
+    gap: 2px;
+  }
+
+  .nav-tab {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+  .nav-tab.active { color: var(--tan); border-bottom-color: var(--tan); background: rgba(196,169,107,0.05); }
+
+  /* MAIN LAYOUT */
+  main { padding: 20px 24px; min-height: calc(100vh - 120px); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* DASHBOARD */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-top: 3px solid var(--tan);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, rgba(196,169,107,0.06) 0%, transparent 70%);
+  }
+
+  .stat-card .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-card .stat-value {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 36px;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .stat-card .stat-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .stat-card.alert { border-top-color: var(--accent-red); }
+  .stat-card.alert .stat-value { color: var(--accent-red); }
+  .stat-card.warn { border-top-color: var(--accent-amber); }
+  .stat-card.warn .stat-value { color: var(--accent-amber); }
+  .stat-card.ok { border-top-color: var(--accent-green); }
+  .stat-card.ok .stat-value { color: var(--accent-green); }
+
+  /* PANELS */
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    margin-bottom: 16px;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(59,74,47,0.4);
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tan);
+  }
+
+  .panel-body { padding: 16px; }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; }
+
+  .data-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--panel-border);
+    background: rgba(0,0,0,0.2);
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(59,74,47,0.3);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .data-table tr:hover td { background: rgba(59,74,47,0.15); }
+
+  .data-table .nsn {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .data-table .qty-cell {
+    font-family: var(--mono);
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .badge-serviceable { background: rgba(39,174,96,0.2); border: 1px solid var(--accent-green); color: var(--accent-green); }
+  .badge-unserviceable { background: rgba(192,57,43,0.2); border: 1px solid var(--accent-red); color: var(--accent-red); }
+  .badge-on-loan { background: rgba(36,113,163,0.2); border: 1px solid var(--accent-blue); color: #5BA4D4; }
+  .badge-repair { background: rgba(212,147,10,0.2); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
+  .badge-written-off { background: rgba(90,90,72,0.3); border: 1px solid var(--text-dim); color: var(--text-dim); }
+  .badge-cat1 { background: rgba(39,174,96,0.15); border:1px solid var(--accent-green); color: var(--accent-green); }
+  .badge-cat2 { background: rgba(212,147,10,0.15); border:1px solid var(--accent-amber); color: var(--accent-amber); }
+  .badge-cat3 { background: rgba(192,57,43,0.15); border:1px solid var(--accent-red); color: var(--accent-red); }
+
+  /* FORMS */
+  .form-grid { display: grid; gap: 12px; }
+  .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+
+  .form-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .form-label .req { color: var(--accent-amber); }
+
+  .form-input, .form-select, .form-textarea {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-family: var(--body);
+    font-size: 13px;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--tan);
+    background: rgba(0,0,0,0.4);
+  }
+
+  .form-select option { background: var(--panel-bg); }
+  .form-textarea { resize: vertical; min-height: 70px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .btn-primary { background: var(--army-green); color: var(--tan); border: 1px solid var(--tan); }
+  .btn-primary:hover { background: var(--olive); }
+  .btn-danger { background: rgba(192,57,43,0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+  .btn-danger:hover { background: rgba(192,57,43,0.35); }
+  .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--panel-border); }
+  .btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .btn-sm { padding: 5px 12px; font-size: 10px; }
+  .btn-amber { background: rgba(212,147,10,0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+  .btn-amber:hover { background: rgba(212,147,10,0.3); }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .search-input-wrap {
+    position: relative; flex: 1;
+  }
+
+  .search-input-wrap::before {
+    content: '⌕';
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+
+  .search-input-wrap input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    padding: 8px 10px 8px 32px;
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .search-input-wrap input:focus { outline: none; border-color: var(--tan); }
+
+  /* ALERTS / NOTICES */
+  .alert-box {
+    padding: 10px 14px;
+    border-left: 3px solid;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  .alert-box.danger { border-color: var(--accent-red); background: rgba(192,57,43,0.1); color: #E8A89A; }
+  .alert-box.warning { border-color: var(--accent-amber); background: rgba(212,147,10,0.1); color: #E8C87A; }
+  .alert-box.info { border-color: var(--accent-blue); background: rgba(36,113,163,0.1); color: #7AB8E8; }
+
+  .alert-box .alert-title { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+
+  /* LOAN CARD */
+  .loan-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--panel-border);
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .loan-card .lc-nsn { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); }
+  .loan-card .lc-name { font-weight: 500; font-size: 13px; }
+  .loan-card .lc-borrower { font-family: var(--mono); font-size: 11px; color: var(--tan); }
+  .loan-card .lc-due { font-family: var(--mono); font-size: 10px; }
+  .loan-card .lc-due.overdue { color: var(--accent-red); font-weight: bold; }
+  .loan-card .lc-due.due-soon { color: var(--accent-amber); }
+  .loan-card .lc-due.ok { color: var(--text-secondary); }
+  .loan-card .lc-info { flex: 1; }
+  .loan-card .lc-qty { font-family: var(--mono); font-weight: bold; font-size: 18px; color: var(--accent-blue); padding: 0 12px; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.75); z-index: 500; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--panel-bg);
+    border: 1px solid var(--tan);
+    width: 90%; max-width: 640px;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px;
+    background: var(--army-green);
+    border-bottom: 1px solid var(--tan);
+  }
+
+  .modal-title {
+    font-family: var(--display); font-weight: 700; font-size: 14px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--tan);
+  }
+
+  .modal-close {
+    background: none; border: none; color: var(--text-secondary);
+    font-size: 20px; cursor: pointer; padding: 0 4px;
+  }
+  .modal-close:hover { color: var(--text-primary); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--panel-border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* TOAST */
+  #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+
+  .toast {
+    background: var(--panel-bg);
+    border-left: 3px solid var(--accent-green);
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    min-width: 260px;
+    animation: slideIn 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  .toast.err { border-color: var(--accent-red); color: #E8A89A; }
+  .toast.warn { border-color: var(--accent-amber); color: #E8C87A; }
+
+  @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--panel-border); margin: 16px 0; }
+
+  /* CADET CARD in issue page */
+  .cadet-info-box {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); padding: 12px; margin-bottom: 16px;
+  }
+
+  .ci-field .ci-label { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; }
+  .ci-field .ci-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
+
+  /* AUDIT LOG */
+  .log-entry {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(59,74,47,0.2);
+    font-size: 12px;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { font-family: var(--mono); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 130px; }
+  .log-action { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px; white-space: nowrap; }
+  .log-action.issue { background: rgba(36,113,163,0.3); color: #5BA4D4; }
+  .log-action.return { background: rgba(39,174,96,0.3); color: var(--accent-green); }
+  .log-action.add { background: rgba(212,147,10,0.2); color: var(--accent-amber); }
+  .log-action.write-off { background: rgba(192,57,43,0.2); color: var(--accent-red); }
+  .log-action.adjust { background: rgba(90,90,72,0.4); color: var(--text-secondary); }
+  .log-desc { flex: 1; color: var(--text-secondary); }
+  .log-user { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .form-grid.cols-3, .form-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+    .form-grid.cols-2 { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .header-status .status-pill:first-child { display: none; }
+  }
+
+  .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ml-auto { margin-left: auto; }
+  .mt-12 { margin-top: 12px; }
+  .mb-12 { margin-bottom: 12px; }
+  .text-mono { font-family: var(--mono); font-size: 11px; }
+  .text-muted { color: var(--text-secondary); }
+  .text-amber { color: var(--accent-amber); }
+  .text-red { color: var(--accent-red); }
+  .text-green { color: var(--accent-green); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  .progress-bar { background: rgba(0,0,0,0.3); border-radius: 2px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; border-radius: 2px; background: var(--tan); transition: width 0.4s; }
+  .progress-bar .fill.low { background: var(--accent-red); }
+  .progress-bar .fill.mid { background: var(--accent-amber); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DFENCE ACT 1903 PROTECTED ⬛</span>
+    <span class="header-datetime" id="clock">--</span>
+  </div>
+  <div class="header-main">
+    <div class="unit-crest">AAC</div>
+    <div class="header-title">
+      <h1>Q-Store Inventory Management System</h1>
+      <div class="subtitle">Australian Army Cadets · Corps / Unit Quartermaster Module · IMS v3.1</div>
+    </div>
+    <div class="header-status">
+      <span class="status-pill unit" id="unit-name-badge">1 ACTU</span>
+      <span class="status-pill sync-off" id="sync-status-pill" onclick="syncPillClicked()" title="OneDrive Sync">☁ NOT CONFIGURED</span>
+      <span class="status-pill online">● SYSTEM ONLINE</span>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('inventory')">Inventory Register</button>
+    <button class="nav-tab" onclick="showPage('issue')">Issue / Return</button>
+    <button class="nav-tab" onclick="showPage('loans')">Active Loans</button>
+    <button class="nav-tab" onclick="showPage('cadets')">Cadet Register</button>
+    <button class="nav-tab" onclick="showPage('reports')">Reports & DA Forms</button>
+    <button class="nav-tab" onclick="showPage('audit')">Audit Log</button>
+    <button class="nav-tab" onclick="showPage('settings')">Settings</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ====== DASHBOARD ====== -->
+<div id="page-dashboard" class="page active">
+  <div class="stats-grid" id="stats-grid"></div>
+
+  <div class="two-col">
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">⚠ Serviceability Alerts</span>
+        </div>
+        <div class="panel-body" id="alerts-panel">
+          <div class="text-muted text-mono">No current alerts.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">⏱ Overdue Returns</span>
+        </div>
+        <div class="panel-body" id="overdue-panel">
+          <div class="text-muted text-mono">No overdue items.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">📋 Recent Transactions</span>
+        </div>
+        <div class="panel-body" id="dash-recent-log" style="max-height:340px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== INVENTORY REGISTER ====== -->
+<div id="page-inventory" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Inventory Register — Controlled Stores</span>
+      <div class="flex-row">
+        <select class="form-select" style="width:150px;padding:5px 8px;font-size:12px;" onchange="filterInventory(this.value)" id="cat-filter">
+          <option value="">All Categories</option>
+          <option value="Uniform">Uniform</option>
+          <option value="Equipment">Equipment</option>
+          <option value="Safety">Safety</option>
+          <option value="Training Aids">Training Aids</option>
+          <option value="Field Stores">Field Stores</option>
+          <option value="Medical">Medical</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-item')">+ Add Item</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <input type="text" id="inv-search" placeholder="Search by NSN, nomenclature, or description..." oninput="renderInventory()">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>NSN / Stores Code</th>
+              <th>Nomenclature</th>
+              <th>Category</th>
+              <th>Auth Qty</th>
+              <th>On Hand</th>
+              <th>On Loan</th>
+              <th>Unserviceable</th>
+              <th>Condition</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ISSUE / RETURN ====== -->
+<div id="page-issue" class="page">
+  <div class="two-col">
+    <div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Issue Equipment to Cadet</span></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Cadet Service Number <span class="req">*</span></label>
+              <input type="text" class="form-input" id="issue-svc" placeholder="e.g. 0123456" oninput="lookupCadet('issue')">
+            </div>
+          </div>
+          <div class="cadet-info-box mt-12" id="issue-cadet-box" style="display:none">
+            <div class="ci-field"><div class="ci-label">Name</div><div class="ci-val" id="iss-name"></div></div>
+            <div class="ci-field"><div class="ci-label">Rank</div><div class="ci-val" id="iss-rank"></div></div>
+            <div class="ci-field"><div class="ci-label">Platoon</div><div class="ci-val" id="iss-plt"></div></div>
+          </div>
+          <hr class="divider">
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label class="form-label">Item (NSN / Name) <span class="req">*</span></label>
+              <select class="form-select" id="issue-item">
+                <option value="">— Select item —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantity <span class="req">*</span></label>
+              <input type="number" class="form-input" id="issue-qty" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Purpose</label>
+              <select class="form-select" id="issue-purpose">
+                <option>Annual Camp</option>
+                <option>Training Activity</option>
+                <option>Parade Night</option>
+                <option>Field Exercise</option>
+                <option>Ceremonial</option>
+                <option>Course Attendance</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Return Due Date <span class="req">*</span></label>
+              <input type="date" class="form-input" id="issue-duedate">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Remarks / Condition at Issue</label>
+              <textarea class="form-textarea" id="issue-remarks" placeholder="Note any existing damage or special conditions..."></textarea>
+            </div>
+          </div>
+          <div class="mt-12 flex-row">
+            <button class="btn btn-primary" onclick="performIssue()">Issue Equipment</button>
+            <span class="text-mono text-muted" id="issue-feedback"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Return Equipment</span></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Cadet Service Number <span class="req">*</span></label>
+              <input type="text" class="form-input" id="return-svc" placeholder="e.g. 0123456" oninput="lookupCadet('return')">
+            </div>
+          </div>
+          <div class="cadet-info-box mt-12" id="return-cadet-box" style="display:none">
+            <div class="ci-field"><div class="ci-label">Name</div><div class="ci-val" id="ret-name"></div></div>
+            <div class="ci-field"><div class="ci-label">Rank</div><div class="ci-val" id="ret-rank"></div></div>
+            <div class="ci-field"><div class="ci-label">On Loan</div><div class="ci-val" id="ret-loan-count"></div></div>
+          </div>
+          <hr class="divider">
+          <div id="return-loan-list"><div class="text-muted text-mono">Enter service number to load loans.</div></div>
+          <div class="mt-12 flex-row">
+            <div class="form-group" style="flex:1">
+              <label class="form-label">Condition on Return</label>
+              <select class="form-select" id="return-condition">
+                <option value="serviceable">Serviceable</option>
+                <option value="unserviceable">Unserviceable — refer for repair</option>
+                <option value="write-off">Write-Off — unfit for service</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mt-12">
+            <label class="form-label">Return Remarks</label>
+            <textarea class="form-textarea" id="return-remarks" placeholder="Damage, missing parts, cleaning required..."></textarea>
+          </div>
+          <div class="mt-12">
+            <button class="btn btn-primary" id="return-btn" onclick="performReturn()">Process Return</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ACTIVE LOANS ====== -->
+<div id="page-loans" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Active Loan Register</span>
+      <div class="flex-row">
+        <select class="form-select" id="loan-filter" style="width:150px;padding:5px 8px;font-size:12px;" onchange="renderLoans()">
+          <option value="all">All</option>
+          <option value="overdue">Overdue</option>
+          <option value="due-soon">Due Within 7 Days</option>
+        </select>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <input type="text" id="loan-search" placeholder="Search cadet name, NSN, item..." oninput="renderLoans()">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="loans-table">
+          <thead>
+            <tr>
+              <th>Loan Ref</th>
+              <th>NSN</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Borrower</th>
+              <th>Purpose</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="loans-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== CADET REGISTER ====== -->
+<div id="page-cadets" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Cadet Register</span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-cadet')">+ Add Cadet</button>
+    </div>
+    <div class="panel-body">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <input type="text" id="cadet-search" placeholder="Search by name, service number, platoon..." oninput="renderCadets()">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Svc No.</th>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Platoon / Section</th>
+              <th>Size — Shirt</th>
+              <th>Size — Trouser</th>
+              <th>Boot Size</th>
+              <th>Items on Loan</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cadets-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== REPORTS ====== -->
+<div id="page-reports" class="page">
+  <div class="alert-box info mb-12">
+    <div class="alert-title">ADF Policy Note</div>
+    Reports are generated in accordance with CADET ADMIN INSTRUCTIONS, DFENCE Logistics Directives, and the AAC Corps Standing Orders. Physical DA Forms should be counter-signed by OC / CO and retained in the unit Q-store records (7-year retention per CADET LOG 01-22).
+  </div>
+  <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-blue)" onclick="generateReport('stocktake')">
+      <div class="stat-label">DA 2062</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Hand Receipt / Annex</div>
+      <div class="stat-sub">Full unit stores accountability report</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-amber)" onclick="generateReport('loan')">
+      <div class="stat-label">Loans Register</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Active Issue Report</div>
+      <div class="stat-sub">All outstanding items & borrowers</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-red)" onclick="generateReport('unserviceable')">
+      <div class="stat-label">DA 2404</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Equipment Inspection</div>
+      <div class="stat-sub">Unserviceable / write-off items listing</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer" onclick="generateReport('cadet-kit')">
+      <div class="stat-label">Individual Kit State</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Cadet Kit List</div>
+      <div class="stat-sub">Per-cadet kit accountability</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-green)" onclick="generateReport('stocktake-full')">
+      <div class="stat-label">Annual Stocktake</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Full Stocktake Report</div>
+      <div class="stat-sub">Authorised vs on-hand comparison</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;border-top-color:var(--tan)" onclick="generateReport('audit')">
+      <div class="stat-label">Audit Trail</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0">Transaction History</div>
+      <div class="stat-sub">Full audit log export</div>
+    </div>
+  </div>
+  <div id="report-output" class="panel mt-12" style="display:none">
+    <div class="panel-header" id="report-output-header">
+      <span class="panel-title" id="report-title">Report</span>
+      <button class="btn btn-secondary btn-sm" onclick="window.print()">⎙ Print</button>
+    </div>
+    <div class="panel-body" id="report-output-body"></div>
+  </div>
+</div>
+
+<!-- ====== AUDIT LOG ====== -->
+<div id="page-audit" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Audit / Transaction Log</span>
+      <span class="text-mono text-muted" id="audit-count"></span>
+    </div>
+    <div class="panel-body">
+      <div class="flex-row mb-12">
+        <select class="form-select" id="audit-filter" style="width:150px;padding:5px 8px;font-size:12px;" onchange="renderAudit()">
+          <option value="all">All Actions</option>
+          <option value="issue">Issue</option>
+          <option value="return">Return</option>
+          <option value="add">Add Item</option>
+          <option value="write-off">Write-Off</option>
+          <option value="adjust">Adjust</option>
+        </select>
+        <div class="search-input-wrap" style="flex:1; max-width:300px">
+          <input type="text" id="audit-search" placeholder="Search log..." oninput="renderAudit()">
+        </div>
+      </div>
+      <div id="audit-log-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SETTINGS ====== -->
+<div id="page-settings" class="page">
+
+  <!-- OneDrive Sync Configuration -->
+  <div class="panel mb-12">
+    <div class="panel-header">
+      <span class="panel-title" style="color:#5BA4D4">☁ OneDrive Sync — Microsoft Identity (MSAL)</span>
+      <span id="od-connected-badge" class="badge" style="display:none"></span>
+    </div>
+    <div class="panel-body">
+
+      <div id="od-status-box" class="alert-box warning mb-12">
+        <div class="alert-title">Not Configured</div>
+        Enter your Azure App Client ID below and click <strong>Save &amp; Initialise</strong> to enable OneDrive sync.
+      </div>
+
+      <!-- Azure App setup guide -->
+      <div class="panel mb-12" style="border-color:rgba(36,113,163,0.3)">
+        <div class="panel-header" style="background:rgba(36,113,163,0.1)">
+          <span class="panel-title" style="color:#5BA4D4;font-size:11px;">AZURE APP REGISTRATION — ONE-TIME SETUP</span>
+        </div>
+        <div class="panel-body" style="font-size:12px;line-height:2;color:var(--text-secondary);">
+          <strong style="color:var(--tan)">1.</strong> Go to <strong>portal.azure.com</strong> → sign in → <em>Microsoft Entra ID</em> → <em>App registrations</em> → <em>New registration</em><br>
+          <strong style="color:var(--tan)">2.</strong> Name it (e.g. <em>QStore IMS</em>). Under <em>Supported account types</em> select <strong>"Accounts in any organizational directory and personal Microsoft accounts"</strong>. Click <em>Register</em>.<br>
+          <strong style="color:var(--tan)">3.</strong> Go to <em>Authentication</em> → <em>Add a platform</em> → <strong>Single-page application (SPA)</strong><br>
+          <strong style="color:var(--tan)">4.</strong> Copy the URI shown below and paste it <strong>exactly</strong> as the Redirect URI. Click <em>Configure</em>.<br>
+          <strong style="color:var(--tan)">5.</strong> Copy the <strong>Application (client) ID</strong> from the Overview page and paste it in the field below.<br>
+
+          <!-- LIVE REDIRECT URI — computed from current window location -->
+          <div style="margin-top:10px;margin-bottom:4px;">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--tan);letter-spacing:2px;text-transform:uppercase;">
+              ▶ Your Redirect URI — copy this exactly into Azure:
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="redirect-uri-display"
+                 style="flex:1;font-family:var(--mono);font-size:12px;color:#5BA4D4;
+                        padding:8px 10px;background:rgba(0,0,0,0.35);
+                        border:1px solid rgba(36,113,163,0.5);word-break:break-all;">
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="copyRedirectUri()" style="white-space:nowrap;flex-shrink:0;">Copy URI</button>
+          </div>
+          <div style="color:var(--accent-amber);font-size:11px;margin-top:6px;">
+            ⚠ This URI must match <em>exactly</em> — including protocol, port, and filename. If you move or rename the file, update the Azure registration.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid cols-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Azure Application (Client) ID <span class="req">*</span></label>
+          <input type="text" class="form-input" id="od-client-id"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                 style="font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">OneDrive Folder Path</label>
+          <input type="text" class="form-input" id="od-folder" placeholder="QStore/1ACTU  (blank = OneDrive root)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Filename</label>
+          <input type="text" class="form-input" id="od-filename" placeholder="qstore_data.json">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Auto-Sync on Changes</label>
+          <select class="form-select" id="od-autosync">
+            <option value="1">Enabled — sync 5 seconds after every change</option>
+            <option value="0">Disabled — manual sync only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-12 flex-row" style="flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-primary"  onclick="odSaveAndInit()">💾 Save &amp; Initialise</button>
+        <button class="btn btn-amber"    id="od-signin-btn"    onclick="odSignIn()"           style="display:none">🔑 Sign In to Microsoft</button>
+        <button class="btn btn-secondary"id="od-signout-btn"   onclick="odSignOut()"          style="display:none">Sign Out</button>
+        <button class="btn btn-primary"  id="od-sync-now-btn"  onclick="syncNow()"            style="display:none">⬆ Sync Now</button>
+        <button class="btn btn-secondary"id="od-load-btn"      onclick="loadFromOneDrive()"   style="display:none">⬇ Load from OneDrive</button>
+        <button class="btn btn-secondary"id="od-link-btn"      onclick="getOneDriveLink()"    style="display:none">🔗 Get File URL</button>
+      </div>
+
+      <!-- File URL display box — shown after Get File URL is clicked -->
+      <div id="od-link-box" class="mt-12" style="display:none">
+        <div class="panel" style="border-color:rgba(36,113,163,0.4)">
+          <div class="panel-header" style="background:rgba(36,113,163,0.08)">
+            <span class="panel-title" style="color:#5BA4D4;font-size:11px;">ONEDRIVE FILE LOCATION</span>
+            <button class="btn btn-secondary btn-sm" onclick="copyOdLink()">Copy URL</button>
+          </div>
+          <div class="panel-body">
+            <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:1px;margin-bottom:6px;">DIRECT FILE URL (requires sign-in to view)</div>
+            <div id="od-weburl" style="font-family:var(--mono);font-size:11px;color:var(--tan);word-break:break-all;padding:8px;background:rgba(0,0,0,0.3);border:1px solid var(--panel-border);"></div>
+            <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:1px;margin:10px 0 6px;">SHAREABLE LINK (anyone with link)</div>
+            <div id="od-shareurl" style="font-family:var(--mono);font-size:11px;color:var(--tan);word-break:break-all;padding:8px;background:rgba(0,0,0,0.3);border:1px solid var(--panel-border);"></div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:8px;">
+              ⓘ The shareable link grants read access to anyone with the URL. Use with caution — this file contains cadet personal information protected under the Privacy Act 1988.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="od-user-info" class="mt-12" style="display:none">
+        <div class="alert-box info">
+          <div class="alert-title">Signed In</div>
+          <span id="od-user-display"></span>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="text-mono" style="color:var(--tan);font-size:9px;letter-spacing:2px;margin-bottom:8px;">SYNC LOG</div>
+      <div id="od-sync-log" style="max-height:160px;overflow-y:auto;">
+        <div class="sync-log-entry"><span class="sl-time">—</span><span class="sl-info">No sync activity yet.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Unit Details</span></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Unit Name</label>
+            <input type="text" class="form-input" id="set-unit-name" placeholder="e.g. 1 Australian Cadet Training Unit">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit Short Code</label>
+            <input type="text" class="form-input" id="set-unit-code" placeholder="e.g. 1 ACTU">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quartermaster Name</label>
+            <input type="text" class="form-input" id="set-qm-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">QM Rank</label>
+            <input type="text" class="form-input" id="set-qm-rank" placeholder="e.g. WO2 / SGT">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Commanding Officer</label>
+            <input type="text" class="form-input" id="set-co-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">State / Territory</label>
+            <select class="form-select" id="set-state">
+              <option>NSW</option><option>VIC</option><option>QLD</option>
+              <option>WA</option><option>SA</option><option>TAS</option>
+              <option>ACT</option><option>NT</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-12">
+          <button class="btn btn-primary" onclick="saveSettings()">Save Unit Details</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Local Data Management</span></div>
+        <div class="panel-body">
+          <div class="alert-box warning mb-12">
+            <div class="alert-title">Data Sovereignty Notice</div>
+            Cadet personal data is protected under the Privacy Act 1988 and ADF data handling policies. OneDrive sync uploads data only to your own Microsoft account / tenancy. Ensure your OneDrive tenancy complies with unit data handling requirements.
+          </div>
+          <div class="flex-row" style="flex-wrap:wrap;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="exportData()">⬇ Export Local (JSON)</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file').click()">⬆ Import Local</button>
+            <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
+            <button class="btn btn-danger btn-sm" onclick="clearData()">⚠ Clear All Data</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel mt-12">
+        <div class="panel-header"><span class="panel-title">ADF Policy Reference</span></div>
+        <div class="panel-body" style="font-size:12px; line-height:1.8; color:var(--text-secondary);">
+          <div class="text-mono" style="color:var(--tan);font-size:10px;margin-bottom:8px;">APPLICABLE DIRECTIVES</div>
+          • CADET LOG 01-22 — Cadet Logistics Instructions<br>
+          • AAFC/AACC Corps Standing Orders — Q-Store Management<br>
+          • DFENCE Procurement Policy Framework 2023<br>
+          • DA Form 2062 — Hand Receipt / Annex<br>
+          • DA Form 2404 — Equipment Inspection Record<br>
+          • ASDEFCON (Support) Template<br>
+          • Privacy Act 1988 (Cth) — APP 11<br>
+          • AAC Administrative Instructions Vol 2 Ch 4<br>
+          <div class="text-mono" style="color:var(--tan);font-size:10px;margin:10px 0 4px;">RETENTION SCHEDULE</div>
+          Issue/Return records: 7 years post activity<br>
+          Write-off records: 10 years<br>
+          Annual Stocktake reports: 7 years
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ====== MODALS ====== -->
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="modal-add-item">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add Inventory Item</span>
+      <button class="modal-close" onclick="closeModal('modal-add-item')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">NSN / Stores Code <span class="req">*</span></label>
+          <input type="text" class="form-input" id="add-nsn" placeholder="e.g. 8405-66-123-4567">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category <span class="req">*</span></label>
+          <select class="form-select" id="add-cat">
+            <option>Uniform</option><option>Equipment</option><option>Safety</option>
+            <option>Training Aids</option><option>Field Stores</option><option>Medical</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nomenclature / Item Name <span class="req">*</span></label>
+          <input type="text" class="form-input" id="add-name" placeholder="e.g. Jacket, Field, DPCU, Mens">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Authorised Quantity</label>
+          <input type="number" class="form-input" id="add-auth" value="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">On Hand Quantity</label>
+          <input type="number" class="form-input" id="add-onhand" value="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Initial Condition</label>
+          <select class="form-select" id="add-condition">
+            <option value="serviceable">Serviceable</option>
+            <option value="unserviceable">Unserviceable</option>
+            <option value="repair">Awaiting Repair</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Storage Location</label>
+          <input type="text" class="form-input" id="add-loc" placeholder="e.g. Shelf A3, Bay 2">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="add-notes" placeholder="Serial numbers, special handling instructions..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-item')">Cancel</button>
+      <button class="btn btn-primary" onclick="addItem()">Add to Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Cadet Modal -->
+<div class="modal-overlay" id="modal-add-cadet">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add Cadet to Register</span>
+      <button class="modal-close" onclick="closeModal('modal-add-cadet')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Service Number <span class="req">*</span></label>
+          <input type="text" class="form-input" id="cadet-svc" placeholder="7-digit number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rank</label>
+          <select class="form-select" id="cadet-rank">
+            <option>CDT</option><option>LCPL</option><option>CPL</option>
+            <option>SGT</option><option>SSGT</option><option>WO</option><option>UO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Surname <span class="req">*</span></label>
+          <input type="text" class="form-input" id="cadet-surname">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Given Name(s) <span class="req">*</span></label>
+          <input type="text" class="form-input" id="cadet-given">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Platoon / Section</label>
+          <input type="text" class="form-input" id="cadet-plt" placeholder="e.g. 1 Platoon, Alpha Sect">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Shirt Size</label>
+          <select class="form-select" id="cadet-shirt">
+            <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trouser Size</label>
+          <input type="text" class="form-input" id="cadet-trouser" placeholder="e.g. 75R">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Boot Size (AU)</label>
+          <input type="text" class="form-input" id="cadet-boot" placeholder="e.g. 9">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-cadet')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCadet()">Add Cadet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="modal-edit-item">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit Inventory Item</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-item')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-idx">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">NSN / Stores Code</label>
+          <input type="text" class="form-input" id="edit-nsn">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="edit-cat">
+            <option>Uniform</option><option>Equipment</option><option>Safety</option>
+            <option>Training Aids</option><option>Field Stores</option><option>Medical</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nomenclature</label>
+          <input type="text" class="form-input" id="edit-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Authorised Qty</label>
+          <input type="number" class="form-input" id="edit-auth" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">On Hand Qty</label>
+          <input type="number" class="form-input" id="edit-onhand" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unserviceable Qty</label>
+          <input type="number" class="form-input" id="edit-unsvc" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition</label>
+          <select class="form-select" id="edit-condition">
+            <option value="serviceable">Serviceable</option>
+            <option value="unserviceable">Unserviceable</option>
+            <option value="repair">Awaiting Repair</option>
+            <option value="written-off">Written Off</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Storage Location</label>
+          <input type="text" class="form-input" id="edit-loc">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="edit-notes"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-item')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditItem()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ===== STATE =====
+let state = {
+  settings: { unitName: '1 Australian Cadet Training Unit', unitCode: '1 ACTU', qmName: '', qmRank: 'WO2', coName: '', state: 'QLD' },
+  items: [],
+  cadets: [],
+  loans: [],
+  auditLog: [],
+  loanCounter: 1000
+};
+
+// ===================================================================
+// ONEDRIVE SYNC ENGINE — MSAL Browser v2 (Microsoft identity platform)
+// Implements the Authorization Code Flow with PKCE for SPAs per:
+// https://learn.microsoft.com/en-us/azure/active-directory/develop/scenario-spa-overview
+// ===================================================================
+const OD = {
+
+  // ---- State ----
+  msalInstance: null,
+  account: null,
+  settings: {
+    clientId:  '',
+    folder:    'QStore',
+    filename:  'qstore_data.json',
+    autoSync:  true
+  },
+  syncTimer:      null,
+  dirty:          false,
+  syncLogEntries: [],
+
+  // ---- Persist settings (never the token — MSAL handles token cache) ----
+  loadSettings() {
+    try {
+      const s = localStorage.getItem('qstore_od_cfg');
+      if (s) this.settings = { ...this.settings, ...JSON.parse(s) };
+    } catch(e) {}
+  },
+
+  persistSettings() {
+    localStorage.setItem('qstore_od_cfg', JSON.stringify(this.settings));
+  },
+
+  // ---- Compute the redirect URI — must exactly match Azure portal registration ----
+  // We use origin + pathname only (no query string, no hash, no trailing slash variation).
+  getRedirectUri() {
+    return window.location.origin + window.location.pathname;
+  },
+
+  // ---- Build a PublicClientApplication per MSAL Browser v2 docs ----
+  // Must be called after clientId is known and the DOM is ready.
+  createMsalInstance(clientId) {
+    const redirectUri = this.getRedirectUri();
+
+    const config = {
+      auth: {
+        clientId:    clientId,
+        authority:   'https://login.microsoftonline.com/common',
+        redirectUri: redirectUri,
+        navigateToLoginRequestUrl: true,
+      },
+      cache: {
+        cacheLocation:          'localStorage',
+        storeAuthStateInCookie: false,
+      },
+      system: {
+        loggerOptions: {
+          loggerCallback: (level, message, containsPii) => {
+            if (!containsPii) console.debug('[MSAL]', message);
+          },
+          piiLoggingEnabled: false,
+          logLevel: msal.LogLevel.Warning,
+        }
+      }
+    };
+
+    return new msal.PublicClientApplication(config);
+  },
+
+  // ---- Initialise / re-initialise MSAL with the stored client ID ----
+  // Must handle the redirect promise on every page load per MS docs.
+  async init() {
+    const clientId = this.settings.clientId;
+    if (!clientId) {
+      this.setStatus('off', '☁ NOT CONFIGURED');
+      this.updateUI();
+      return;
+    }
+
+    // Guard: MSAL library must be available
+    if (typeof msal === 'undefined') {
+      this.setStatus('err', '☁ MSAL NOT LOADED');
+      this.showStatusBox('danger', 'MSAL Library Failed to Load',
+        'The Microsoft Authentication Library could not be loaded from CDN. ' +
+        'Check your internet connection and reload the page. ' +
+        'OneDrive sync is unavailable until the library loads.');
+      this.addLog('err', 'msal is not defined — CDN load failed');
+      this.updateUI();
+      return;
+    }
+
+    try {
+      this.msalInstance = this.createMsalInstance(clientId);
+
+      // CRITICAL — per MSAL Browser docs, handleRedirectPromise() MUST be
+      // called on every page load to complete the auth code + PKCE flow
+      // after Microsoft redirects back to the app. Omitting this is the
+      // most common cause of MSAL initialisation failures.
+      const response = await this.msalInstance.handleRedirectPromise();
+
+      if (response && response.account) {
+        // We just came back from a redirect login — store the account
+        this.account = response.account;
+        this.msalInstance.setActiveAccount(this.account);
+        this.addLog('ok', `Signed in via redirect: ${this.account.username}`);
+      } else {
+        // Not a redirect — check if a cached account already exists
+        const accounts = this.msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          this.account = accounts[0];
+          this.msalInstance.setActiveAccount(this.account);
+          this.addLog('info', `Resumed session: ${this.account.username}`);
+        }
+      }
+
+      this.updateUI();
+
+    } catch (err) {
+      // Differentiate configuration errors from transient errors
+      const msg = err.message || String(err);
+      if (msg.includes('redirect_uri_mismatch') || msg.includes('AADSTS50011')) {
+        const uri = this.getRedirectUri();
+        this.addLog('err', 'Redirect URI mismatch — register this URI in Azure: ' + uri);
+        this.setStatus('err', '☁ URI MISMATCH');
+        this.showStatusBox('danger',
+          'Redirect URI Mismatch — Action Required',
+          `The URI registered in Azure does not match this page. ` +
+          `Go to <strong>portal.azure.com → App registrations → Authentication → SPA</strong> ` +
+          `and add exactly: ` +
+          `<code style="color:var(--tan);word-break:break-all">${uri}</code>`
+        );
+      } else if (msg.includes('ClientAuthError') || msg.includes('client_id')) {
+        this.addLog('err', 'Invalid Client ID — check Azure portal');
+        this.setStatus('err', '☁ INVALID CLIENT ID');
+        this.showStatusBox('danger', 'Invalid Client ID', 'The Client ID is not recognised by Microsoft. Check the Azure portal and ensure the app registration exists.');
+      } else {
+        this.addLog('err', 'MSAL init error: ' + msg);
+        this.setStatus('err', '☁ INIT ERROR');
+        this.showStatusBox('danger', 'Initialisation Error', msg);
+      }
+      this.updateUI();
+    }
+  },
+
+  // ---- Sign in using popup (works without a server, no redirect needed) ----
+  async signIn() {
+    if (!this.msalInstance) {
+      toast('Save your Client ID first, then try again.', 'err');
+      return;
+    }
+    try {
+      // Use loginPopup — works from file:// and any hosted URL.
+      // loginRedirect requires the page to be served over HTTP/HTTPS only.
+      const resp = await this.msalInstance.loginPopup({
+        scopes: ['Files.ReadWrite', 'User.Read'],
+        prompt: 'select_account', // always show account picker
+      });
+      this.account = resp.account;
+      this.msalInstance.setActiveAccount(this.account);
+      this.addLog('ok', `Signed in: ${this.account.username}`);
+      this.updateUI();
+      toast('Signed in to Microsoft successfully.');
+    } catch (err) {
+      const msg = err.message || String(err);
+      if (msg.includes('popup_window_error') || msg.includes('user_cancelled')) {
+        toast('Sign-in cancelled or popup blocked. Allow popups for this page.', 'warn');
+      } else {
+        this.addLog('err', 'Sign-in failed: ' + msg);
+        toast('Sign-in failed — see sync log for details.', 'err');
+      }
+    }
+  },
+
+  // ---- Sign out ----
+  async signOut() {
+    if (!this.msalInstance || !this.account) return;
+    try {
+      // logoutPopup clears the MSAL token cache without navigating away
+      await this.msalInstance.logoutPopup({ account: this.account });
+    } catch(e) {
+      // If popup fails, manually clear cache
+      this.msalInstance.clearCache();
+    }
+    this.account = null;
+    this.updateUI();
+    toast('Signed out of OneDrive.');
+  },
+
+  // ---- Silently acquire an access token, fall back to popup ----
+  async getAccessToken() {
+    if (!this.msalInstance || !this.account) return null;
+    const request = {
+      scopes:  ['Files.ReadWrite', 'User.Read'],
+      account: this.account,
+    };
+    try {
+      // Try silent acquisition first (uses cached token or refresh token)
+      const resp = await this.msalInstance.acquireTokenSilent(request);
+      return resp.accessToken;
+    } catch (silentErr) {
+      // InteractionRequiredAuthError means we need user interaction
+      if (silentErr instanceof msal.InteractionRequiredAuthError) {
+        try {
+          const resp = await this.msalInstance.acquireTokenPopup(request);
+          this.account = resp.account;
+          return resp.accessToken;
+        } catch (popupErr) {
+          this.addLog('err', 'Token refresh failed: ' + (popupErr.message || popupErr));
+          return null;
+        }
+      }
+      this.addLog('err', 'Token acquisition error: ' + (silentErr.message || silentErr));
+      return null;
+    }
+  },
+
+  // ---- Build Graph API URLs ----
+  _graphUrl(suffix) {
+    const folder = (this.settings.folder || '').trim().replace(/^\/+|\/+$/g, '');
+    const fname  = (this.settings.filename || 'qstore_data.json').trim();
+    const path   = folder ? `${folder}/${fname}` : fname;
+    return `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(path).replace(/%2F/g, '/')}:${suffix}`;
+  },
+
+  // ---- Upload state to OneDrive ----
+  async upload(data) {
+    const token = await this.getAccessToken();
+    if (!token) {
+      this.setStatus('err', '☁ AUTH REQUIRED');
+      return false;
+    }
+    this.setStatus('busy', '☁ SYNCING…');
+    try {
+      const resp = await fetch(this._graphUrl('/content'), {
+        method:  'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify(data, null, 2),
+      });
+      if (resp.status === 401) {
+        this.setStatus('err', '☁ AUTH EXPIRED');
+        this.addLog('err', '401 Unauthorised — re-authenticate');
+        return false;
+      }
+      if (!resp.ok) throw new Error(`Graph API ${resp.status} ${resp.statusText}`);
+      this.dirty = false;
+      const ts = new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+      this.setStatus('ok', `☁ SYNCED ${ts}`);
+      this.addLog('ok', `Saved to ${this.settings.folder || 'OneDrive root'}/${this.settings.filename}`);
+      return true;
+    } catch(err) {
+      this.setStatus('err', '☁ SYNC FAILED');
+      this.addLog('err', 'Upload error: ' + err.message);
+      toast('OneDrive sync failed — see sync log.', 'err');
+      return false;
+    }
+  },
+
+  // ---- Download state from OneDrive ----
+  async download() {
+    const token = await this.getAccessToken();
+    if (!token) { toast('Not signed in to OneDrive.', 'err'); return null; }
+    this.setStatus('busy', '☁ LOADING…');
+    try {
+      // Get item metadata to check existence and get download URL
+      const metaResp = await fetch(this._graphUrl(''), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (metaResp.status === 404) {
+        this.addLog('info', 'File not found on OneDrive — will be created on first sync.');
+        this.setStatus('ok', '☁ READY');
+        return null;
+      }
+      if (!metaResp.ok) throw new Error(`Graph API ${metaResp.status}`);
+      const meta = await metaResp.json();
+      // Download via the pre-authenticated URL from Graph metadata
+      const dlResp = await fetch(meta['@microsoft.graph.downloadUrl']);
+      if (!dlResp.ok) throw new Error(`Download ${dlResp.status}`);
+      const data = await dlResp.json();
+      const ts = new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+      this.setStatus('ok', `☁ LOADED ${ts}`);
+      this.addLog('ok', `Loaded from ${this.settings.folder || 'OneDrive root'}/${this.settings.filename}`);
+      return data;
+    } catch(err) {
+      this.setStatus('err', '☁ LOAD FAILED');
+      this.addLog('err', 'Download error: ' + err.message);
+      toast('OneDrive load failed — see sync log.', 'err');
+      return null;
+    }
+  },
+
+  // ---- Debounced auto-save — called after every state write ----
+  scheduleSave() {
+    if (!this.settings.autoSync || !this.account) return;
+    this.dirty = true;
+    this.setStatus('dirty', '☁ UNSAVED');
+    clearTimeout(this.syncTimer);
+    this.syncTimer = setTimeout(() => this.upload(state), 5000);
+  },
+
+  // ---- UI helpers ----
+  setStatus(cls, text) {
+    const el = document.getElementById('sync-status-pill');
+    if (el) { el.className = `status-pill sync-${cls}`; el.textContent = text; }
+  },
+
+  showStatusBox(type, title, body) {
+    const el = document.getElementById('od-status-box');
+    if (!el) return;
+    const colours = { info:'info', danger:'danger', warning:'warning' };
+    el.className = `alert-box ${colours[type]||'warning'} mb-12`;
+    el.innerHTML = `<div class="alert-title">${title}</div>${body}`;
+  },
+
+  updateUI() {
+    const signedIn  = !!this.account;
+    const hasClient = !!this.settings.clientId;
+
+    // Buttons
+    const show = (id, visible) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = visible ? '' : 'none';
+    };
+    show('od-signin-btn',   hasClient && !signedIn);
+    show('od-signout-btn',  signedIn);
+    show('od-sync-now-btn', signedIn);
+    show('od-load-btn',     signedIn);
+    show('od-link-btn',     signedIn);
+
+    // User info panel
+    const info = document.getElementById('od-user-info');
+    const disp = document.getElementById('od-user-display');
+    if (info && disp) {
+      if (signedIn) {
+        info.style.display = '';
+        disp.textContent = `${this.account.name || ''}  ·  ${this.account.username}`;
+      } else {
+        info.style.display = 'none';
+      }
+    }
+
+    // Status box
+    if (signedIn) {
+      this.showStatusBox('info', 'Signed In — Sync Active',
+        `Authenticated as <strong>${this.account.username}</strong>. ` +
+        `Auto-sync is <strong>${this.settings.autoSync ? 'enabled' : 'disabled'}</strong>. ` +
+        `Target: <code style="color:var(--tan)">${this.settings.folder || 'OneDrive root'}/${this.settings.filename}</code>`);
+      this.setStatus('ok', '☁ SIGNED IN');
+    } else if (hasClient) {
+      this.showStatusBox('warning', 'Client ID Saved — Sign In Required',
+        'MSAL is initialised. Click <strong>Sign In to Microsoft</strong> to authenticate and enable sync. A popup window will appear.');
+      this.setStatus('off', '☁ SIGN IN REQUIRED');
+    } else {
+      this.showStatusBox('warning', 'Not Configured',
+        'Enter your Azure App Client ID below and click <strong>Save &amp; Initialise</strong>.');
+      this.setStatus('off', '☁ NOT CONFIGURED');
+    }
+
+    // Header badge
+    const badge = document.getElementById('od-connected-badge');
+    if (badge) {
+      badge.style.display = signedIn ? '' : 'none';
+      if (signedIn) { badge.className = 'badge badge-serviceable'; badge.textContent = '● CONNECTED'; }
+    }
+  },
+
+  loadSettingsIntoUI() {
+    const v = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    v('od-client-id', this.settings.clientId || '');
+    v('od-folder',    this.settings.folder   || '');
+    v('od-filename',  this.settings.filename || 'qstore_data.json');
+    v('od-autosync',  this.settings.autoSync ? '1' : '0');
+  },
+
+  addLog(type, msg) {
+    const ts = new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+    this.syncLogEntries.unshift({ ts, type, msg });
+    if (this.syncLogEntries.length > 40) this.syncLogEntries.pop();
+    this.renderLog();
+  },
+
+  renderLog() {
+    const el = document.getElementById('od-sync-log');
+    if (!el) return;
+    const icon = { ok:'✓', err:'✗', info:'ℹ', warn:'⚠' };
+    el.innerHTML = this.syncLogEntries.map(e =>
+      `<div class="sync-log-entry">` +
+      `<span class="sl-time">${e.ts}</span>` +
+      `<span class="sl-${e.type}">${icon[e.type]||'·'} ${e.msg}</span>` +
+      `</div>`
+    ).join('') || '<div class="sync-log-entry"><span class="sl-time">—</span><span class="sl-info">No sync activity yet.</span></div>';
+  }
+};
+
+// ===== SEED DATA =====
+function seedData() {
+  state.items = [
+    { id: 'I001', nsn: '8405-66-013-4567', name: 'Jacket, Field, DPCU, Disruptive Pattern', cat: 'Uniform', authQty: 40, onHand: 38, onLoan: 3, unsvc: 2, condition: 'serviceable', loc: 'Shelf A1', notes: '' },
+    { id: 'I002', nsn: '8405-66-023-1234', name: 'Trouser, Field, DPCU, Disruptive Pattern', cat: 'Uniform', authQty: 40, onHand: 37, onLoan: 4, unsvc: 1, condition: 'serviceable', loc: 'Shelf A2', notes: '' },
+    { id: 'I003', nsn: '8465-66-001-5679', name: 'Webbing, Load Bearing, PLCE', cat: 'Equipment', authQty: 30, onHand: 28, onLoan: 2, unsvc: 0, condition: 'serviceable', loc: 'Bay B1', notes: '' },
+    { id: 'I004', nsn: '8415-66-004-2210', name: 'Boot, Combat, Black, Pair', cat: 'Uniform', authQty: 30, onHand: 25, onLoan: 5, unsvc: 2, condition: 'serviceable', loc: 'Shelf C3', notes: 'Sizes vary — check cadet fit card' },
+    { id: 'I005', nsn: '8470-66-144-1726', name: 'Helmet, Combat, F1, PASGT', cat: 'Equipment', authQty: 15, onHand: 14, onLoan: 1, unsvc: 1, condition: 'serviceable', loc: 'Bay B3', notes: '' },
+    { id: 'I006', nsn: '8415-66-101-3901', name: 'Beret, Army Cadet, Hat, Dark Brown', cat: 'Uniform', authQty: 50, onHand: 46, onLoan: 0, unsvc: 3, condition: 'serviceable', loc: 'Shelf A3', notes: '' },
+    { id: 'I007', nsn: '6545-66-001-0023', name: 'First Aid Kit, Personal, IFAK', cat: 'Medical', authQty: 20, onHand: 18, onLoan: 2, unsvc: 0, condition: 'serviceable', loc: 'Cabinet M1', notes: 'Check expiry dates quarterly' },
+    { id: 'I008', nsn: '8340-66-050-2204', name: 'Sleeping Bag, Temperate, Bivy', cat: 'Field Stores', authQty: 25, onHand: 20, onLoan: 5, unsvc: 2, condition: 'serviceable', loc: 'Bay D2', notes: '' },
+    { id: 'I009', nsn: '3419-66-200-1113', name: 'Compass, Magnetic, Prismatic, M73', cat: 'Training Aids', authQty: 20, onHand: 18, onLoan: 2, unsvc: 0, condition: 'serviceable', loc: 'Cabinet T1', notes: 'Serial number tracking required' },
+    { id: 'I010', nsn: '4240-66-153-9908', name: 'Goggles, Protective, Clear Lens', cat: 'Safety', authQty: 30, onHand: 30, onLoan: 0, unsvc: 4, condition: 'unserviceable', loc: 'Shelf S1', notes: '4x cracked — pending disposal action' },
+  ];
+
+  state.cadets = [
+    { svcNo: '1234567', rank: 'SGT', surname: 'WILLIAMS', given: 'Jordan', plt: '1 Platoon', shirt: 'M', trouser: '80R', boot: '10' },
+    { svcNo: '2345678', rank: 'CPL', surname: 'PHAM', given: 'Nguyen', plt: '1 Platoon', shirt: 'S', trouser: '72R', boot: '8' },
+    { svcNo: '3456789', rank: 'LCPL', surname: 'MORRISON', given: 'Eliza', plt: '2 Platoon', shirt: 'XS', trouser: '68R', boot: '6' },
+    { svcNo: '4567890', rank: 'CDT', surname: 'NGUYEN', given: 'Michael', plt: '2 Platoon', shirt: 'L', trouser: '90R', boot: '11' },
+    { svcNo: '5678901', rank: 'WO', surname: 'JOHNSON', given: 'Casey', plt: 'HQ', shirt: 'L', trouser: '85R', boot: '10' },
+  ];
+
+  const today = new Date();
+  const future = d => { const x = new Date(today); x.setDate(x.getDate() + d); return x.toISOString().slice(0,10); };
+  const past = d => { const x = new Date(today); x.setDate(x.getDate() - d); return x.toISOString().slice(0,10); };
+
+  state.loans = [
+    { ref: 'LN-1001', itemId: 'I001', itemName: 'Jacket, Field, DPCU', nsn: '8405-66-013-4567', qty: 1, borrowerSvc: '1234567', borrowerName: 'SGT WILLIAMS', purpose: 'Annual Camp', issueDate: past(14), dueDate: future(7), condition: 'serviceable', active: true },
+    { ref: 'LN-1002', itemId: 'I004', itemName: 'Boot, Combat, Black, Pair', nsn: '8415-66-004-2210', qty: 1, borrowerSvc: '2345678', borrowerName: 'CPL PHAM', purpose: 'Field Exercise', issueDate: past(5), dueDate: past(2), condition: 'serviceable', active: true },
+    { ref: 'LN-1003', itemId: 'I008', itemName: 'Sleeping Bag, Temperate', nsn: '8340-66-050-2204', qty: 2, borrowerSvc: '4567890', borrowerName: 'CDT NGUYEN', purpose: 'Annual Camp', issueDate: past(20), dueDate: past(6), condition: 'serviceable', active: true },
+    { ref: 'LN-1004', itemId: 'I007', itemName: 'First Aid Kit, IFAK', nsn: '6545-66-001-0023', qty: 1, borrowerSvc: '5678901', borrowerName: 'WO JOHNSON', purpose: 'Training Activity', issueDate: past(3), dueDate: future(25), condition: 'serviceable', active: true },
+  ];
+  state.loanCounter = 1005;
+
+  state.auditLog = [
+    { ts: new Date(Date.now()-86400000*2).toISOString(), action: 'add', desc: 'Added: Goggles, Protective — 30 units', user: 'WO2 Smith' },
+    { ts: new Date(Date.now()-86400000).toISOString(), action: 'issue', desc: 'LN-1001: Jacket DPCU × 1 issued to SGT WILLIAMS for Annual Camp', user: 'SGT Jones' },
+    { ts: new Date(Date.now()-3600000*12).toISOString(), action: 'issue', desc: 'LN-1002: Boot Combat × 1 issued to CPL PHAM for Field Exercise', user: 'SGT Jones' },
+    { ts: new Date(Date.now()-3600000*6).toISOString(), action: 'issue', desc: 'LN-1003: Sleeping Bag × 2 issued to CDT NGUYEN for Annual Camp', user: 'WO2 Smith' },
+    { ts: new Date(Date.now()-3600000*2).toISOString(), action: 'issue', desc: 'LN-1004: First Aid Kit × 1 issued to WO JOHNSON for Training Activity', user: 'WO2 Smith' },
+    { ts: new Date().toISOString(), action: 'adjust', desc: 'Stock check: 4× Goggles marked unserviceable (cracked lens)', user: 'WO2 Smith' },
+  ];
+}
+
+// ===== INIT =====
+async function init() {
+  OD.loadSettings();
+  const saved = localStorage.getItem('qstore_data');
+  if (saved) { try { state = JSON.parse(saved); } catch(e) { seedData(); } }
+  else { seedData(); }
+  loadSettings();
+  OD.loadSettingsIntoUI();
+  populateRedirectUriDisplay();
+  // MSAL init must be awaited — it handles the redirect callback
+  await OD.init();
+  renderAll();
+  setInterval(updateClock, 1000);
+  updateClock();
+}
+
+function save() {
+  localStorage.setItem('qstore_data', JSON.stringify(state));
+  OD.scheduleSave();
+}
+
+function renderAll() {
+  renderStats();
+  renderInventory();
+  renderLoans();
+  renderCadets();
+  renderAudit();
+  renderAlerts();
+  populateIssueItems();
+}
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleString('en-AU', { weekday:'short', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+}
+
+// ===== NAVIGATION =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== STATS =====
+function renderStats() {
+  const totalOnHand = state.items.reduce((s, i) => s + (i.onHand || 0), 0);
+  const totalOnLoan = state.items.reduce((s, i) => s + (i.onLoan || 0), 0);
+  const totalUnsvc = state.items.reduce((s, i) => s + (i.unsvc || 0), 0);
+  const overdue = state.loans.filter(l => l.active && l.dueDate < new Date().toISOString().slice(0,10)).length;
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = `
+    <div class="stat-card ok">
+      <div class="stat-label">Total Items (On Hand)</div>
+      <div class="stat-value">${totalOnHand}</div>
+      <div class="stat-sub">${state.items.length} line items registered</div>
+    </div>
+    <div class="stat-card${totalOnLoan > 0 ? '' : ' ok'}">
+      <div class="stat-label">Items on Loan</div>
+      <div class="stat-value">${totalOnLoan}</div>
+      <div class="stat-sub">${state.loans.filter(l=>l.active).length} active loan records</div>
+    </div>
+    <div class="stat-card${totalUnsvc > 0 ? ' warn' : ' ok'}">
+      <div class="stat-label">Unserviceable Items</div>
+      <div class="stat-value">${totalUnsvc}</div>
+      <div class="stat-sub">Require action / disposal</div>
+    </div>
+    <div class="stat-card${overdue > 0 ? ' alert' : ' ok'}">
+      <div class="stat-label">Overdue Returns</div>
+      <div class="stat-value">${overdue}</div>
+      <div class="stat-sub">Past due date — follow up required</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cadets Registered</div>
+      <div class="stat-value">${state.cadets.length}</div>
+      <div class="stat-sub">In unit register</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Line Items (Auth)</div>
+      <div class="stat-value">${state.items.reduce((s,i)=>s+(i.authQty||0),0)}</div>
+      <div class="stat-sub">Authorised equipment holdings</div>
+    </div>
+  `;
+}
+
+// ===== ALERTS =====
+function renderAlerts() {
+  const today = new Date().toISOString().slice(0,10);
+  const panel = document.getElementById('alerts-panel');
+  let html = '';
+  state.items.forEach(i => {
+    if (i.unsvc > 0) html += `<div class="alert-box warning"><div class="alert-title">Unserviceable</div>${i.name} — ${i.unsvc} unit(s) require action</div>`;
+    if ((i.onHand - i.onLoan) < 2 && i.authQty > 3) html += `<div class="alert-box danger"><div class="alert-title">Low Stock</div>${i.name} — ${i.onHand - i.onLoan} serviceable available</div>`;
+  });
+  const overdueLoans = state.loans.filter(l => l.active && l.dueDate < today);
+  overdueLoans.forEach(l => html += `<div class="alert-box danger"><div class="alert-title">Overdue Return</div>${l.ref} — ${l.itemName} × ${l.qty} — ${l.borrowerName} — Due ${l.dueDate}</div>`);
+  panel.innerHTML = html || '<div class="text-muted text-mono">No current alerts.</div>';
+
+  const overdue = document.getElementById('overdue-panel');
+  overdue.innerHTML = overdueLoans.length
+    ? overdueLoans.map(l => `<div class="loan-card"><div class="lc-qty">${l.qty}</div><div class="lc-info"><div class="lc-nsn">${l.nsn}</div><div class="lc-name">${l.itemName}</div><div class="lc-borrower">${l.borrowerName}</div></div><div class="lc-due overdue">OVERDUE — ${l.dueDate}</div></div>`).join('')
+    : '<div class="text-muted text-mono">No overdue items.</div>';
+
+  const recent = document.getElementById('dash-recent-log');
+  recent.innerHTML = [...state.auditLog].reverse().slice(0, 10).map(e =>
+    `<div class="log-entry"><span class="log-time">${new Date(e.ts).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}</span><span class="log-action ${e.action}">${e.action.toUpperCase()}</span><span class="log-desc">${e.desc}</span></div>`
+  ).join('');
+}
+
+// ===== INVENTORY =====
+let invCatFilter = '';
+function filterInventory(val) { invCatFilter = val; renderInventory(); }
+
+function renderInventory() {
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const rows = state.items.filter(i =>
+    (!invCatFilter || i.cat === invCatFilter) &&
+    (!q || i.name.toLowerCase().includes(q) || i.nsn.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q))
+  );
+  const condBadge = c => {
+    const m = { serviceable: 'badge-serviceable', unserviceable: 'badge-unserviceable', repair: 'badge-repair', 'written-off': 'badge-written-off' };
+    return `<span class="badge ${m[c]||'badge-serviceable'}">${c}</span>`;
+  };
+  document.getElementById('inv-tbody').innerHTML = rows.map((item, idx) => {
+    const available = item.onHand - item.onLoan;
+    const pct = item.authQty > 0 ? Math.round((item.onHand / item.authQty) * 100) : 0;
+    const fillClass = pct < 50 ? 'low' : pct < 75 ? 'mid' : '';
+    return `<tr>
+      <td class="nsn">${item.nsn}</td>
+      <td><strong>${item.name}</strong><br><span class="text-mono" style="font-size:10px;color:var(--text-dim)">${item.cat}</span></td>
+      <td><span class="badge ${item.cat === 'Safety' ? 'badge-cat3' : item.cat === 'Equipment' ? 'badge-cat2' : 'badge-cat1'}">${item.cat}</span></td>
+      <td class="qty-cell" style="color:var(--text-secondary)">${item.authQty}</td>
+      <td class="qty-cell">
+        ${item.onHand}
+        <div class="progress-bar"><div class="fill ${fillClass}" style="width:${pct}%"></div></div>
+      </td>
+      <td class="qty-cell" style="color:var(--accent-blue)">${item.onLoan}</td>
+      <td class="qty-cell" style="color:${item.unsvc>0?'var(--accent-amber)':'var(--text-dim)'}">${item.unsvc}</td>
+      <td>${condBadge(item.condition)}</td>
+      <td class="text-mono" style="font-size:11px">${item.loc || '—'}</td>
+      <td>
+        <div class="flex-row" style="gap:4px">
+          <button class="btn btn-secondary btn-sm" onclick="openEditItem(${state.items.indexOf(item)})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem(${state.items.indexOf(item)})">Del</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:24px">No items found.</td></tr>`;
+}
+
+// ===== ADD ITEM =====
+function addItem() {
+  const nsn = document.getElementById('add-nsn').value.trim();
+  const name = document.getElementById('add-name').value.trim();
+  if (!nsn || !name) { toast('NSN and nomenclature are required.', 'err'); return; }
+  const item = {
+    id: 'I' + Date.now(),
+    nsn, name,
+    cat: document.getElementById('add-cat').value,
+    authQty: parseInt(document.getElementById('add-auth').value) || 0,
+    onHand: parseInt(document.getElementById('add-onhand').value) || 0,
+    onLoan: 0, unsvc: 0,
+    condition: document.getElementById('add-condition').value,
+    loc: document.getElementById('add-loc').value,
+    notes: document.getElementById('add-notes').value,
+  };
+  state.items.push(item);
+  logAudit('add', `Added: ${name} — ${item.onHand} units (Auth: ${item.authQty})`);
+  save(); renderInventory(); renderStats(); populateIssueItems();
+  closeModal('modal-add-item');
+  toast(`Item "${name}" added to register.`);
+  ['add-nsn','add-name','add-loc','add-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('add-onhand').value = 1;
+  document.getElementById('add-auth').value = 1;
+}
+
+function openEditItem(idx) {
+  const i = state.items[idx];
+  document.getElementById('edit-idx').value = idx;
+  document.getElementById('edit-nsn').value = i.nsn;
+  document.getElementById('edit-cat').value = i.cat;
+  document.getElementById('edit-name').value = i.name;
+  document.getElementById('edit-auth').value = i.authQty;
+  document.getElementById('edit-onhand').value = i.onHand;
+  document.getElementById('edit-unsvc').value = i.unsvc;
+  document.getElementById('edit-condition').value = i.condition;
+  document.getElementById('edit-loc').value = i.loc || '';
+  document.getElementById('edit-notes').value = i.notes || '';
+  openModal('modal-edit-item');
+}
+
+function saveEditItem() {
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  const i = state.items[idx];
+  i.nsn = document.getElementById('edit-nsn').value;
+  i.cat = document.getElementById('edit-cat').value;
+  i.name = document.getElementById('edit-name').value;
+  i.authQty = parseInt(document.getElementById('edit-auth').value) || 0;
+  i.onHand = parseInt(document.getElementById('edit-onhand').value) || 0;
+  i.unsvc = parseInt(document.getElementById('edit-unsvc').value) || 0;
+  i.condition = document.getElementById('edit-condition').value;
+  i.loc = document.getElementById('edit-loc').value;
+  i.notes = document.getElementById('edit-notes').value;
+  logAudit('adjust', `Updated item: ${i.name}`);
+  save(); renderInventory(); renderStats(); renderAlerts(); populateIssueItems();
+  closeModal('modal-edit-item');
+  toast('Item updated.');
+}
+
+function deleteItem(idx) {
+  if (!confirm('Delete this inventory item? This cannot be undone.')) return;
+  const name = state.items[idx].name;
+  state.items.splice(idx, 1);
+  logAudit('adjust', `Deleted item: ${name}`);
+  save(); renderInventory(); renderStats(); populateIssueItems();
+  toast(`Item removed from register.`);
+}
+
+// ===== ISSUE / RETURN =====
+function lookupCadet(mode) {
+  const svc = document.getElementById(`${mode}-svc`).value.trim();
+  const cadet = state.cadets.find(c => c.svcNo === svc);
+  if (mode === 'issue') {
+    const box = document.getElementById('issue-cadet-box');
+    if (cadet) {
+      box.style.display = 'grid';
+      document.getElementById('iss-name').textContent = `${cadet.surname}, ${cadet.given}`;
+      document.getElementById('iss-rank').textContent = cadet.rank;
+      document.getElementById('iss-plt').textContent = cadet.plt;
+    } else { box.style.display = 'none'; }
+  } else {
+    const box = document.getElementById('return-cadet-box');
+    if (cadet) {
+      const loans = state.loans.filter(l => l.active && l.borrowerSvc === svc);
+      box.style.display = 'grid';
+      document.getElementById('ret-name').textContent = `${cadet.surname}, ${cadet.given}`;
+      document.getElementById('ret-rank').textContent = cadet.rank;
+      document.getElementById('ret-loan-count').textContent = `${loans.length} item(s)`;
+      renderReturnLoans(svc);
+    } else { box.style.display = 'none'; document.getElementById('return-loan-list').innerHTML = '<div class="text-muted text-mono">Cadet not found.</div>'; }
+  }
+}
+
+function renderReturnLoans(svc) {
+  const loans = state.loans.filter(l => l.active && l.borrowerSvc === svc);
+  const el = document.getElementById('return-loan-list');
+  if (!loans.length) { el.innerHTML = '<div class="text-muted text-mono">No active loans for this cadet.</div>'; return; }
+  el.innerHTML = loans.map(l => `
+    <label style="cursor:pointer">
+    <div class="loan-card" style="margin-bottom:6px">
+      <input type="checkbox" name="ret-loan" value="${l.ref}" style="margin-right:8px">
+      <div class="lc-qty">${l.qty}</div>
+      <div class="lc-info">
+        <div class="lc-nsn">${l.nsn} · ${l.ref}</div>
+        <div class="lc-name">${l.itemName}</div>
+        <div class="lc-borrower">${l.purpose}</div>
+      </div>
+      <div class="lc-due ${l.dueDate < new Date().toISOString().slice(0,10) ? 'overdue' : 'ok'}">Due: ${l.dueDate}</div>
+    </div>
+    </label>
+  `).join('');
+}
+
+function populateIssueItems() {
+  const sel = document.getElementById('issue-item');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Select item —</option>';
+  state.items.forEach(i => {
+    const avail = i.onHand - i.onLoan;
+    if (avail > 0 && i.condition !== 'written-off') {
+      const opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = `${i.name} (${i.nsn}) — Avail: ${avail}`;
+      sel.appendChild(opt);
+    }
+  });
+  if (prev) sel.value = prev;
+}
+
+function performIssue() {
+  const svc = document.getElementById('issue-svc').value.trim();
+  const itemId = document.getElementById('issue-item').value;
+  const qty = parseInt(document.getElementById('issue-qty').value);
+  const dueDate = document.getElementById('issue-duedate').value;
+  const purpose = document.getElementById('issue-purpose').value;
+  const remarks = document.getElementById('issue-remarks').value;
+
+  if (!svc || !itemId || !qty || !dueDate) { toast('All required fields must be completed.', 'err'); return; }
+
+  const cadet = state.cadets.find(c => c.svcNo === svc);
+  if (!cadet) { toast('Cadet not found in register.', 'err'); return; }
+
+  const item = state.items.find(i => i.id === itemId);
+  const avail = item.onHand - item.onLoan;
+  if (qty > avail) { toast(`Insufficient stock. Only ${avail} available.`, 'err'); return; }
+
+  const loan = {
+    ref: `LN-${state.loanCounter++}`,
+    itemId, itemName: item.name, nsn: item.nsn, qty,
+    borrowerSvc: svc,
+    borrowerName: `${cadet.rank} ${cadet.surname}`,
+    purpose, issueDate: new Date().toISOString().slice(0,10),
+    dueDate, condition: 'serviceable',
+    remarks, active: true
+  };
+
+  state.loans.push(loan);
+  item.onLoan += qty;
+  logAudit('issue', `${loan.ref}: ${item.name} × ${qty} issued to ${loan.borrowerName} for ${purpose}`);
+  save(); renderAll();
+  toast(`${loan.ref}: ${item.name} × ${qty} issued to ${loan.borrowerName}`);
+  document.getElementById('issue-svc').value = '';
+  document.getElementById('issue-cadet-box').style.display = 'none';
+  document.getElementById('issue-remarks').value = '';
+  document.getElementById('issue-duedate').value = '';
+}
+
+function performReturn() {
+  const checked = document.querySelectorAll('input[name="ret-loan"]:checked');
+  if (!checked.length) { toast('Select at least one loan to return.', 'err'); return; }
+  const condition = document.getElementById('return-condition').value;
+  const remarks = document.getElementById('return-remarks').value;
+
+  checked.forEach(cb => {
+    const loan = state.loans.find(l => l.ref === cb.value);
+    if (!loan) return;
+    loan.active = false;
+    loan.returnDate = new Date().toISOString().slice(0,10);
+    loan.returnCondition = condition;
+    loan.returnRemarks = remarks;
+    const item = state.items.find(i => i.id === loan.itemId);
+    if (item) {
+      item.onLoan = Math.max(0, item.onLoan - loan.qty);
+      if (condition === 'unserviceable') item.unsvc += loan.qty;
+      if (condition === 'write-off') { item.unsvc += loan.qty; item.condition = 'unserviceable'; }
+    }
+    logAudit('return', `${loan.ref}: ${loan.itemName} × ${loan.qty} returned by ${loan.borrowerName} — Condition: ${condition}`);
+  });
+
+  save(); renderAll();
+  toast(`Return processed successfully.`);
+  document.getElementById('return-svc').value = '';
+  document.getElementById('return-cadet-box').style.display = 'none';
+  document.getElementById('return-loan-list').innerHTML = '<div class="text-muted text-mono">Enter service number to load loans.</div>';
+  document.getElementById('return-remarks').value = '';
+}
+
+// ===== LOANS =====
+function renderLoans() {
+  const today = new Date().toISOString().slice(0,10);
+  const soon = new Date(); soon.setDate(soon.getDate() + 7);
+  const soonStr = soon.toISOString().slice(0,10);
+  const filter = document.getElementById('loan-filter').value;
+  const q = document.getElementById('loan-search').value.toLowerCase();
+
+  let loans = state.loans.filter(l => l.active);
+  if (filter === 'overdue') loans = loans.filter(l => l.dueDate < today);
+  if (filter === 'due-soon') loans = loans.filter(l => l.dueDate >= today && l.dueDate <= soonStr);
+  if (q) loans = loans.filter(l => l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) || l.nsn.includes(q) || l.ref.toLowerCase().includes(q));
+
+  const tbody = document.getElementById('loans-tbody');
+  tbody.innerHTML = loans.map(l => {
+    let statusCls = 'badge-on-loan';
+    let statusTxt = 'Active';
+    if (l.dueDate < today) { statusCls = 'badge-unserviceable'; statusTxt = 'OVERDUE'; }
+    else if (l.dueDate <= soonStr) { statusCls = 'badge-repair'; statusTxt = 'Due Soon'; }
+    return `<tr>
+      <td class="text-mono">${l.ref}</td>
+      <td class="nsn">${l.nsn}</td>
+      <td>${l.itemName}</td>
+      <td class="qty-cell" style="color:var(--accent-blue)">${l.qty}</td>
+      <td>${l.borrowerName}</td>
+      <td style="font-size:12px">${l.purpose}</td>
+      <td class="text-mono">${l.issueDate}</td>
+      <td class="text-mono ${l.dueDate < today ? 'text-red' : ''}">${l.dueDate}</td>
+      <td><span class="badge ${statusCls}">${statusTxt}</span></td>
+      <td>
+        <button class="btn btn-amber btn-sm" onclick="quickReturn('${l.ref}')">Return</button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:24px">No loans match filter.</td></tr>`;
+}
+
+function quickReturn(ref) {
+  const loan = state.loans.find(l => l.ref === ref);
+  if (!loan) return;
+  loan.active = false;
+  loan.returnDate = new Date().toISOString().slice(0,10);
+  loan.returnCondition = 'serviceable';
+  const item = state.items.find(i => i.id === loan.itemId);
+  if (item) item.onLoan = Math.max(0, item.onLoan - loan.qty);
+  logAudit('return', `${loan.ref}: ${loan.itemName} × ${loan.qty} returned by ${loan.borrowerName} (quick return)`);
+  save(); renderAll();
+  toast(`${loan.ref} marked as returned.`);
+}
+
+// ===== CADETS =====
+function renderCadets() {
+  const q = document.getElementById('cadet-search').value.toLowerCase();
+  const rows = state.cadets.filter(c =>
+    !q || `${c.svcNo} ${c.rank} ${c.surname} ${c.given} ${c.plt}`.toLowerCase().includes(q)
+  );
+  document.getElementById('cadets-tbody').innerHTML = rows.map(c => {
+    const loans = state.loans.filter(l => l.active && l.borrowerSvc === c.svcNo).length;
+    return `<tr>
+      <td class="text-mono">${c.svcNo}</td>
+      <td>${c.rank}</td>
+      <td><strong>${c.surname}</strong>, ${c.given}</td>
+      <td>${c.plt}</td>
+      <td>${c.shirt}</td>
+      <td>${c.trouser}</td>
+      <td>${c.boot}</td>
+      <td class="qty-cell" style="color:${loans > 0 ? 'var(--accent-blue)' : 'var(--text-dim)'}">${loans}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteCadet('${c.svcNo}')">Remove</button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:24px">No cadets found.</td></tr>`;
+}
+
+function addCadet() {
+  const svc = document.getElementById('cadet-svc').value.trim();
+  const surname = document.getElementById('cadet-surname').value.trim();
+  const given = document.getElementById('cadet-given').value.trim();
+  if (!svc || !surname || !given) { toast('Service number and name are required.', 'err'); return; }
+  if (state.cadets.find(c => c.svcNo === svc)) { toast('Service number already registered.', 'err'); return; }
+  state.cadets.push({
+    svcNo: svc,
+    rank: document.getElementById('cadet-rank').value,
+    surname: surname.toUpperCase(),
+    given,
+    plt: document.getElementById('cadet-plt').value,
+    shirt: document.getElementById('cadet-shirt').value,
+    trouser: document.getElementById('cadet-trouser').value,
+    boot: document.getElementById('cadet-boot').value,
+  });
+  logAudit('add', `Cadet registered: ${document.getElementById('cadet-rank').value} ${surname.toUpperCase()}, ${given} (${svc})`);
+  save(); renderCadets();
+  closeModal('modal-add-cadet');
+  toast(`Cadet ${surname.toUpperCase()} added to register.`);
+}
+
+function deleteCadet(svc) {
+  const loans = state.loans.filter(l => l.active && l.borrowerSvc === svc);
+  if (loans.length) { toast('Cannot remove cadet with active loans.', 'err'); return; }
+  if (!confirm('Remove this cadet from the register?')) return;
+  const cadet = state.cadets.find(c => c.svcNo === svc);
+  state.cadets = state.cadets.filter(c => c.svcNo !== svc);
+  logAudit('adjust', `Cadet removed: ${cadet.rank} ${cadet.surname}, ${cadet.given} (${svc})`);
+  save(); renderCadets();
+  toast('Cadet removed.');
+}
+
+// ===== AUDIT LOG =====
+function logAudit(action, desc) {
+  state.auditLog.push({ ts: new Date().toISOString(), action, desc, user: state.settings.qmRank + ' ' + state.settings.qmName || 'QM' });
+}
+
+function renderAudit() {
+  const filter = document.getElementById('audit-filter').value;
+  const q = document.getElementById('audit-search').value.toLowerCase();
+  let entries = [...state.auditLog].reverse();
+  if (filter !== 'all') entries = entries.filter(e => e.action === filter);
+  if (q) entries = entries.filter(e => e.desc.toLowerCase().includes(q));
+  document.getElementById('audit-count').textContent = `${entries.length} records`;
+  document.getElementById('audit-log-container').innerHTML = entries.map(e =>
+    `<div class="log-entry">
+      <span class="log-time">${new Date(e.ts).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}</span>
+      <span class="log-action ${e.action}">${e.action.toUpperCase()}</span>
+      <span class="log-desc">${e.desc}</span>
+      <span class="log-user">${e.user || '—'}</span>
+    </div>`
+  ).join('') || '<div class="text-muted text-mono">No log entries match filter.</div>';
+}
+
+// ===== REPORTS =====
+function generateReport(type) {
+  const panel = document.getElementById('report-output');
+  const body = document.getElementById('report-output-body');
+  const title = document.getElementById('report-title');
+  panel.style.display = 'block';
+  const today = new Date().toLocaleDateString('en-AU', { day:'2-digit', month:'long', year:'numeric' });
+  const settings = state.settings;
+
+  if (type === 'stocktake' || type === 'stocktake-full') {
+    title.textContent = 'DA 2062 / Full Stocktake — Inventory Holdings';
+    body.innerHTML = `
+      <div class="text-mono" style="margin-bottom:16px; color:var(--text-secondary)">
+        UNIT: ${settings.unitName} &nbsp;|&nbsp; DATE: ${today} &nbsp;|&nbsp; QM: ${settings.qmRank} ${settings.qmName} &nbsp;|&nbsp; CO: ${settings.coName}
+      </div>
+      <table class="data-table">
+        <thead><tr><th>NSN</th><th>Nomenclature</th><th>Cat</th><th>Auth Qty</th><th>On Hand</th><th>On Loan</th><th>Available</th><th>Unsvce</th><th>Condition</th><th>Variance</th></tr></thead>
+        <tbody>${state.items.map(i => {
+          const avail = i.onHand - i.onLoan;
+          const variance = i.onHand - i.authQty;
+          return `<tr>
+            <td class="nsn">${i.nsn}</td><td>${i.name}</td><td>${i.cat}</td>
+            <td>${i.authQty}</td><td>${i.onHand}</td><td>${i.onLoan}</td><td>${avail}</td><td>${i.unsvc}</td>
+            <td><span class="badge badge-${i.condition}">${i.condition}</span></td>
+            <td class="text-mono" style="color:${variance < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${variance >= 0 ? '+' : ''}${variance}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div style="margin-top:20px; font-size:11px; color:var(--text-dim); font-family:var(--mono)">
+        Generated: ${new Date().toLocaleString('en-AU')} &nbsp;|&nbsp; Retain 7 years per CADET LOG 01-22. QM signature required before filing.
+      </div>`;
+  }
+
+  if (type === 'loan') {
+    title.textContent = 'Active Issue Register — Outstanding Loans';
+    const activeLoans = state.loans.filter(l => l.active);
+    body.innerHTML = `
+      <div class="text-mono mb-12" style="color:var(--text-secondary)">UNIT: ${settings.unitName} &nbsp;|&nbsp; DATE: ${today} &nbsp;|&nbsp; Total Active: ${activeLoans.length}</div>
+      <table class="data-table">
+        <thead><tr><th>Loan Ref</th><th>NSN</th><th>Item</th><th>Qty</th><th>Borrower</th><th>Svc No.</th><th>Purpose</th><th>Issue Date</th><th>Due Date</th><th>Status</th></tr></thead>
+        <tbody>${activeLoans.map(l => {
+          const today2 = new Date().toISOString().slice(0,10);
+          const ov = l.dueDate < today2;
+          return `<tr><td class="text-mono">${l.ref}</td><td class="nsn">${l.nsn}</td><td>${l.itemName}</td><td>${l.qty}</td><td>${l.borrowerName}</td><td class="text-mono">${l.borrowerSvc}</td><td>${l.purpose}</td><td class="text-mono">${l.issueDate}</td><td class="text-mono ${ov ? 'text-red' : ''}">${l.dueDate}</td><td><span class="badge ${ov ? 'badge-unserviceable' : 'badge-on-loan'}">${ov ? 'OVERDUE' : 'Active'}</span></td></tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  if (type === 'unserviceable') {
+    title.textContent = 'DA 2404 — Equipment Inspection Record (Unserviceable Items)';
+    const unsvcItems = state.items.filter(i => i.unsvc > 0 || i.condition === 'unserviceable' || i.condition === 'written-off');
+    body.innerHTML = `
+      <div class="text-mono mb-12" style="color:var(--text-secondary)">UNIT: ${settings.unitName} &nbsp;|&nbsp; DATE: ${today} &nbsp;|&nbsp; Items Requiring Action: ${unsvcItems.length}</div>
+      <div class="alert-box warning mb-12"><div class="alert-title">Action Required</div>All unserviceable items must be actioned IAW unit SOP. Write-off authority required from OC/CO. Retain this record with DA 2404.</div>
+      <table class="data-table">
+        <thead><tr><th>NSN</th><th>Nomenclature</th><th>Unsvc Qty</th><th>Condition</th><th>Location</th><th>Notes / Defect</th><th>Recommended Action</th></tr></thead>
+        <tbody>${unsvcItems.map(i => `<tr>
+          <td class="nsn">${i.nsn}</td><td>${i.name}</td><td class="qty-cell text-amber">${i.unsvc}</td>
+          <td><span class="badge badge-${i.condition}">${i.condition}</span></td>
+          <td class="text-mono">${i.loc}</td>
+          <td style="font-size:11px">${i.notes || '—'}</td>
+          <td style="font-size:11px;color:var(--accent-amber)">${i.condition === 'written-off' ? 'Dispose / Write-off authority required' : 'Inspect → Repair or Write-off'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;border-top:1px solid var(--panel-border);padding-top:16px;font-size:11px;font-family:var(--mono);color:var(--text-dim)">
+        <div>QM Signature: ___________________<br>Date: ${today}</div>
+        <div>OC Signature: ___________________<br>Date: _______________</div>
+        <div>CO Approval: ___________________<br>Date: _______________</div>
+      </div>`;
+  }
+
+  if (type === 'audit') {
+    title.textContent = 'Audit Trail — Full Transaction History';
+    body.innerHTML = `
+      <div class="text-mono mb-12" style="color:var(--text-secondary)">UNIT: ${settings.unitName} &nbsp;|&nbsp; DATE: ${today} &nbsp;|&nbsp; Records: ${state.auditLog.length}</div>
+      <div>${[...state.auditLog].reverse().map(e => `<div class="log-entry"><span class="log-time">${new Date(e.ts).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})}</span><span class="log-action ${e.action}">${e.action.toUpperCase()}</span><span class="log-desc">${e.desc}</span><span class="log-user">${e.user||'—'}</span></div>`).join('')}</div>`;
+  }
+
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ===== SETTINGS =====
+function loadSettings() {
+  const s = state.settings;
+  document.getElementById('set-unit-name').value = s.unitName || '';
+  document.getElementById('set-unit-code').value = s.unitCode || '';
+  document.getElementById('set-qm-name').value = s.qmName || '';
+  document.getElementById('set-qm-rank').value = s.qmRank || '';
+  document.getElementById('set-co-name').value = s.coName || '';
+  if (s.state) document.getElementById('set-state').value = s.state;
+  document.getElementById('unit-name-badge').textContent = s.unitCode || '1 ACTU';
+}
+
+function saveSettings() {
+  state.settings = {
+    unitName: document.getElementById('set-unit-name').value,
+    unitCode: document.getElementById('set-unit-code').value,
+    qmName: document.getElementById('set-qm-name').value,
+    qmRank: document.getElementById('set-qm-rank').value,
+    coName: document.getElementById('set-co-name').value,
+    state: document.getElementById('set-state').value,
+  };
+  document.getElementById('unit-name-badge').textContent = state.settings.unitCode;
+  save();
+  toast('Unit details saved.');
+}
+
+// ===== ONEDRIVE UI HANDLERS =====
+async function odSaveAndInit() {
+  OD.settings.clientId = (document.getElementById('od-client-id').value || '').trim();
+  OD.settings.folder   = (document.getElementById('od-folder').value    || '').trim();
+  OD.settings.filename = (document.getElementById('od-filename').value  || 'qstore_data.json').trim();
+  OD.settings.autoSync = document.getElementById('od-autosync').value === '1';
+  if (!OD.settings.clientId) { toast('Client ID is required.', 'err'); return; }
+  OD.persistSettings();
+  toast('Settings saved — initialising MSAL…');
+  await OD.init();
+}
+
+async function odSignIn()  { await OD.signIn(); }
+async function odSignOut() { await OD.signOut(); }
+
+async function syncNow() {
+  const ok = await OD.upload(state);
+  if (ok) toast('Data synced to OneDrive.');
+}
+
+async function loadFromOneDrive() {
+  if (!confirm('Load data from OneDrive? This will overwrite your current local data.')) return;
+  const data = await OD.download();
+  if (data) {
+    state = data;
+    localStorage.setItem('qstore_data', JSON.stringify(state));
+    loadSettings();
+    OD.loadSettingsIntoUI();
+    renderAll();
+    toast('Data loaded from OneDrive.');
+  }
+}
+
+async function getOneDriveLink() {
+  const token = await OD.getAccessToken();
+  if (!token) { toast('Not signed in — sign in first.', 'err'); return; }
+
+  const linkBox  = document.getElementById('od-link-box');
+  const weburlEl = document.getElementById('od-weburl');
+  const shareurlEl = document.getElementById('od-shareurl');
+
+  weburlEl.textContent   = 'Fetching…';
+  shareurlEl.textContent = 'Fetching…';
+  linkBox.style.display  = '';
+
+  try {
+    // 1. Get the file metadata — contains webUrl (direct link requiring sign-in)
+    const metaResp = await fetch(OD._graphUrl(''), {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (metaResp.status === 404) {
+      weburlEl.textContent   = '⚠ File not found. Sync the data first, then try again.';
+      shareurlEl.textContent = '—';
+      toast('File not found on OneDrive — sync first.', 'warn');
+      return;
+    }
+    if (!metaResp.ok) throw new Error(`Graph API ${metaResp.status}`);
+
+    const meta = await metaResp.json();
+    weburlEl.textContent = meta.webUrl || '(not available)';
+
+    // 2. Create a shareable link via Graph createLink action
+    const shareResp = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/items/${meta.id}/createLink`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify({
+          type:  'view',   // read-only
+          scope: 'anonymous'  // anyone with the link
+        })
+      }
+    );
+
+    if (shareResp.ok) {
+      const shareData = await shareResp.json();
+      shareurlEl.textContent = shareData.link?.webUrl || '(could not generate)';
+    } else {
+      // Sharing may be disabled by the tenant — show direct URL only
+      shareurlEl.textContent = '(sharing disabled by your organisation — use the direct URL above)';
+    }
+
+    OD.addLog('info', 'File URL retrieved from Graph API');
+    toast('File URL retrieved.');
+
+  } catch(err) {
+    weburlEl.textContent   = 'Error: ' + err.message;
+    shareurlEl.textContent = '—';
+    OD.addLog('err', 'Get file URL failed: ' + err.message);
+  }
+}
+
+function copyOdLink() {
+  // Copy whichever URL is available — prefer shareable link
+  const share  = document.getElementById('od-shareurl').textContent;
+  const direct = document.getElementById('od-weburl').textContent;
+  const url = (share && !share.startsWith('(')) ? share : direct;
+  if (!url || url.startsWith('(') || url === 'Fetching…') {
+    toast('No URL to copy yet.', 'warn'); return;
+  }
+  navigator.clipboard.writeText(url).then(
+    () => toast('URL copied to clipboard.'),
+    () => {
+      // Clipboard API blocked — select the text manually
+      const el = document.getElementById('od-shareurl');
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      toast('Select and copy the highlighted URL.', 'warn');
+    }
+  );
+}
+
+function syncPillClicked() {
+  if (OD.account) {
+    syncNow();
+  } else {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-settings').classList.add('active');
+    const tabs = document.querySelectorAll('.nav-tab');
+    tabs[tabs.length - 1].classList.add('active');
+    toast('Configure OneDrive sync in Settings.', 'warn');
+  }
+}
+
+// Populate the redirect URI display box as soon as the DOM is ready
+// so the user can see and copy the exact URI before doing anything else.
+function populateRedirectUriDisplay() {
+  const el = document.getElementById('redirect-uri-display');
+  if (el) el.textContent = window.location.origin + window.location.pathname;
+}
+
+function copyRedirectUri() {
+  const uri = window.location.origin + window.location.pathname;
+  navigator.clipboard.writeText(uri).then(
+    () => toast('Redirect URI copied to clipboard.'),
+    () => {
+      // Fallback: select the text
+      const el = document.getElementById('redirect-uri-display');
+      if (el) {
+        const range = document.createRange();
+        range.selectNode(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+      toast('Select and copy the highlighted URI.', 'warn');
+    }
+  );
+}
+
+// ===== DATA MANAGEMENT =====
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `qstore_${state.settings.unitCode.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Data exported.');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      state = JSON.parse(e.target.result);
+      save(); loadSettings(); renderAll();
+      toast('Data imported successfully.');
+    } catch { toast('Invalid file format.', 'err'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearData() {
+  if (!confirm('⚠ This will permanently erase all inventory data. Are you absolutely sure?')) return;
+  if (!confirm('FINAL CONFIRMATION: Clear all Q-Store data?')) return;
+  localStorage.removeItem('qstore_data');
+  seedData();
+  loadSettings(); renderAll();
+  toast('Data cleared. Sample data loaded.', 'warn');
+}
+
+// ===== MODAL HELPERS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
+});
+
+// ===== TOAST =====
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ===== RUN =====
+// Poll until MSAL script has finished loading (injected asynchronously above),
+// then run init(). Timeout after 8 seconds and start without OneDrive if it fails.
+(function waitForMsal() {
+  var attempts = 0;
+  var maxAttempts = 80; // 80 × 100ms = 8 seconds
+  function check() {
+    attempts++;
+    if (typeof msal !== 'undefined') {
+      // MSAL is ready
+      init();
+    } else if (attempts >= maxAttempts) {
+      console.error('MSAL did not load within 8s — starting without OneDrive sync.');
+      window.__msalReady = false;
+      init(); // start app anyway — sync just won't work
+    } else {
+      setTimeout(check, 100);
+    }
+  }
+  // If DOM is already loaded, start polling immediately
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', check);
+  } else {
+    check();
+  }
+})();
+</script>
+</body>
+</html>
