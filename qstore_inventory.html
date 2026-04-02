@@ -181,7 +181,66 @@
   .sync-log-entry .sl-err { color: var(--accent-red); }
   .sync-log-entry .sl-info { color: #5BA4D4; }
 
-  /* ===== QR / LABEL STYLES ===== */
+  /* ===== CADET COMBOBOX ===== */
+  .cadet-combo { position: relative; }
+  .cadet-combo-input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-family: var(--body);
+    font-size: 13px;
+    transition: border-color 0.15s;
+  }
+  .cadet-combo-input:focus { outline: none; border-color: var(--tan); }
+
+  .cadet-combo-dropdown {
+    display: none;
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
+    background: var(--panel-bg);
+    border: 1px solid var(--tan);
+    border-top: none;
+    max-height: 240px; overflow-y: auto;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+  .cadet-combo-dropdown.open { display: block; }
+
+  .cadet-combo-option {
+    padding: 9px 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(59,74,47,0.2);
+    transition: background 0.1s;
+  }
+  .cadet-combo-option:last-child { border-bottom: none; }
+  .cadet-combo-option:hover, .cadet-combo-option.focused { background: rgba(196,169,107,0.1); }
+
+  .cadet-combo-option .co-svc  { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); min-width: 70px; }
+  .cadet-combo-option .co-rank { font-family: var(--mono); font-size: 10px; color: var(--tan); min-width: 40px; }
+  .cadet-combo-option .co-name { font-size: 13px; font-weight: 500; }
+  .cadet-combo-option .co-plt  { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-left: auto; }
+
+  .cadet-combo-option.add-new {
+    color: var(--accent-green); font-family: var(--mono); font-size: 11px;
+    background: rgba(39,174,96,0.06);
+  }
+  .cadet-combo-option.add-new:hover { background: rgba(39,174,96,0.12); }
+  .cadet-combo-no-results { padding: 10px 12px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+
+  /* Quick-add cadet inline form */
+  .quick-add-cadet-form {
+    background: rgba(39,174,96,0.06);
+    border: 1px solid rgba(39,174,96,0.3);
+    border-top: 2px solid var(--accent-green);
+    padding: 14px;
+    margin-top: 8px;
+  }
+  .quick-add-cadet-form .qa-title {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+    color: var(--accent-green); text-transform: uppercase; margin-bottom: 10px;
+  }
   .label-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -998,8 +1057,49 @@
         <div class="panel-body">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Cadet Service Number <span class="req">*</span></label>
-              <input type="text" class="form-input" id="issue-svc" placeholder="e.g. 0123456" oninput="lookupCadet('issue')">
+              <label class="form-label">Cadet <span class="req">*</span></label>
+              <div class="cadet-combo" id="issue-cadet-combo">
+                <input type="text" class="cadet-combo-input" id="issue-svc"
+                       placeholder="Type name or service number to search..."
+                       autocomplete="off"
+                       oninput="cadetComboFilter('issue')"
+                       onfocus="cadetComboOpen('issue')"
+                       onkeydown="cadetComboKey(event,'issue')">
+                <div class="cadet-combo-dropdown" id="issue-combo-dropdown"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Quick-add new cadet inline -->
+          <div class="quick-add-cadet-form" id="issue-quick-add" style="display:none">
+            <div class="qa-title">+ Add New Cadet to Register</div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label class="form-label">Service No. <span class="req">*</span></label>
+                <input type="text" class="form-input" id="qa-issue-svc" placeholder="7 digits">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rank</label>
+                <select class="form-select" id="qa-issue-rank">
+                  <option>CDT</option><option>LCPL</option><option>CPL</option>
+                  <option>SGT</option><option>SSGT</option><option>WO</option><option>UO</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Surname <span class="req">*</span></label>
+                <input type="text" class="form-input" id="qa-issue-surname">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Given Name</label>
+                <input type="text" class="form-input" id="qa-issue-given">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Platoon / Section</label>
+                <input type="text" class="form-input" id="qa-issue-plt">
+              </div>
+            </div>
+            <div class="flex-row mt-12" style="gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="quickAddCadet('issue')">Add &amp; Select</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('issue-quick-add').style.display='none'">Cancel</button>
             </div>
           </div>
           <div class="cadet-info-box mt-12" id="issue-cadet-box" style="display:none">
@@ -1054,8 +1154,49 @@
         <div class="panel-body">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Cadet Service Number <span class="req">*</span></label>
-              <input type="text" class="form-input" id="return-svc" placeholder="e.g. 0123456" oninput="lookupCadet('return')">
+              <label class="form-label">Cadet <span class="req">*</span></label>
+              <div class="cadet-combo" id="return-cadet-combo">
+                <input type="text" class="cadet-combo-input" id="return-svc"
+                       placeholder="Type name or service number to search..."
+                       autocomplete="off"
+                       oninput="cadetComboFilter('return')"
+                       onfocus="cadetComboOpen('return')"
+                       onkeydown="cadetComboKey(event,'return')">
+                <div class="cadet-combo-dropdown" id="return-combo-dropdown"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Quick-add new cadet inline -->
+          <div class="quick-add-cadet-form" id="return-quick-add" style="display:none">
+            <div class="qa-title">+ Add New Cadet to Register</div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label class="form-label">Service No. <span class="req">*</span></label>
+                <input type="text" class="form-input" id="qa-return-svc" placeholder="7 digits">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rank</label>
+                <select class="form-select" id="qa-return-rank">
+                  <option>CDT</option><option>LCPL</option><option>CPL</option>
+                  <option>SGT</option><option>SSGT</option><option>WO</option><option>UO</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Surname <span class="req">*</span></label>
+                <input type="text" class="form-input" id="qa-return-surname">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Given Name</label>
+                <input type="text" class="form-input" id="qa-return-given">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Platoon / Section</label>
+                <input type="text" class="form-input" id="qa-return-plt">
+              </div>
+            </div>
+            <div class="flex-row mt-12" style="gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="quickAddCadet('return')">Add &amp; Select</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('return-quick-add').style.display='none'">Cancel</button>
             </div>
           </div>
           <div class="cadet-info-box mt-12" id="return-cadet-box" style="display:none">
@@ -3058,28 +3199,194 @@ function deleteItem(idx) {
 }
 
 // ===== ISSUE / RETURN =====
-function lookupCadet(mode) {
-  const svc = document.getElementById(`${mode}-svc`).value.trim();
-  const cadet = state.cadets.find(c => c.svcNo === svc);
+// =====================================================================
+// CADET COMBOBOX ENGINE
+// =====================================================================
+// Tracks the selected svcNo separately from the display text
+const _cadetSvc = { issue: '', return: '' };
+
+function cadetComboOpen(mode) {
+  cadetComboFilter(mode);
+}
+
+function cadetComboFilter(mode) {
+  const input = document.getElementById(`${mode}-svc`);
+  const dropdown = document.getElementById(`${mode}-combo-dropdown`);
+  const q = input.value.toLowerCase().trim();
+
+  // If user typed something that doesn't match current selection, clear selection
+  _cadetSvc[mode] = '';
+  const box = document.getElementById(`${mode}-cadet-box`);
+  if (box) box.style.display = 'none';
+  if (mode === 'return') {
+    document.getElementById('return-loan-list').innerHTML =
+      '<div class="text-muted text-mono">Select a cadet to load loans.</div>';
+  }
+
+  // Filter cadets
+  let matches = state.cadets.filter(c => {
+    if (!q) return true;
+    return (
+      c.svcNo.includes(q) ||
+      c.surname.toLowerCase().includes(q) ||
+      c.given.toLowerCase().includes(q) ||
+      `${c.rank} ${c.surname}`.toLowerCase().includes(q) ||
+      c.plt.toLowerCase().includes(q)
+    );
+  });
+
+  // Sort: cadets with active loans first (useful for return panel)
+  if (mode === 'return') {
+    matches = matches.sort((a, b) => {
+      const aLoans = state.loans.filter(l => l.active && l.borrowerSvc === a.svcNo).length;
+      const bLoans = state.loans.filter(l => l.active && l.borrowerSvc === b.svcNo).length;
+      return bLoans - aLoans;
+    });
+  }
+
+  // Build dropdown HTML
+  let html = '';
+  const shown = matches.slice(0, 50); // cap at 50 for performance
+  if (shown.length) {
+    html = shown.map(c => {
+      const loans = state.loans.filter(l => l.active && l.borrowerSvc === c.svcNo).length;
+      const loanBadge = loans > 0
+        ? `<span style="font-family:var(--mono);font-size:9px;padding:1px 5px;background:rgba(36,113,163,0.25);color:#5BA4D4;border-radius:2px;margin-left:4px">${loans} on loan</span>`
+        : '';
+      return `<div class="cadet-combo-option" data-svc="${c.svcNo}"
+                   onmousedown="cadetComboSelect('${mode}','${c.svcNo}')">
+        <span class="co-rank">${c.rank}</span>
+        <span class="co-name">${c.surname}, ${c.given}${loanBadge}</span>
+        <span class="co-plt">${c.plt || ''}</span>
+        <span class="co-svc">${c.svcNo}</span>
+      </div>`;
+    }).join('');
+  } else if (q) {
+    html = `<div class="cadet-combo-no-results">No cadets match "${input.value}"</div>`;
+  }
+
+  // Always offer "Add new cadet" option
+  const addLabel = q
+    ? `+ Add new cadet "${input.value.toUpperCase()}"`
+    : '+ Add a new cadet to register';
+  html += `<div class="cadet-combo-option add-new" onmousedown="cadetComboShowAdd('${mode}')">
+    ${addLabel}
+  </div>`;
+
+  dropdown.innerHTML = html;
+  dropdown.classList.add('open');
+}
+
+function cadetComboSelect(mode, svcNo) {
+  const cadet = state.cadets.find(c => c.svcNo === svcNo);
+  if (!cadet) return;
+
+  _cadetSvc[mode] = svcNo;
+  const input = document.getElementById(`${mode}-svc`);
+  input.value = `${cadet.rank} ${cadet.surname}, ${cadet.given} [${svcNo}]`;
+
+  // Close dropdown
+  document.getElementById(`${mode}-combo-dropdown`).classList.remove('open');
+  document.getElementById(`${mode}-quick-add`).style.display = 'none';
+
+  // Show cadet info box and trigger existing logic
   if (mode === 'issue') {
     const box = document.getElementById('issue-cadet-box');
-    if (cadet) {
-      box.style.display = 'grid';
-      document.getElementById('iss-name').textContent = `${cadet.surname}, ${cadet.given}`;
-      document.getElementById('iss-rank').textContent = cadet.rank;
-      document.getElementById('iss-plt').textContent = cadet.plt;
-    } else { box.style.display = 'none'; }
+    box.style.display = 'grid';
+    document.getElementById('iss-name').textContent = `${cadet.surname}, ${cadet.given}`;
+    document.getElementById('iss-rank').textContent = cadet.rank;
+    document.getElementById('iss-plt').textContent  = cadet.plt || '—';
   } else {
+    const loans = state.loans.filter(l => l.active && l.borrowerSvc === svcNo);
     const box = document.getElementById('return-cadet-box');
-    if (cadet) {
-      const loans = state.loans.filter(l => l.active && l.borrowerSvc === svc);
-      box.style.display = 'grid';
-      document.getElementById('ret-name').textContent = `${cadet.surname}, ${cadet.given}`;
-      document.getElementById('ret-rank').textContent = cadet.rank;
-      document.getElementById('ret-loan-count').textContent = `${loans.length} item(s)`;
-      renderReturnLoans(svc);
-    } else { box.style.display = 'none'; document.getElementById('return-loan-list').innerHTML = '<div class="text-muted text-mono">Cadet not found.</div>'; }
+    box.style.display = 'grid';
+    document.getElementById('ret-name').textContent       = `${cadet.surname}, ${cadet.given}`;
+    document.getElementById('ret-rank').textContent       = cadet.rank;
+    document.getElementById('ret-loan-count').textContent = `${loans.length} item(s)`;
+    renderReturnLoans(svcNo);
   }
+}
+
+function cadetComboShowAdd(mode) {
+  document.getElementById(`${mode}-combo-dropdown`).classList.remove('open');
+  const qa = document.getElementById(`${mode}-quick-add`);
+  qa.style.display = '';
+  // Pre-fill service number if input looks like a number
+  const raw = document.getElementById(`${mode}-svc`).value.trim();
+  if (/^\d+$/.test(raw)) {
+    document.getElementById(`qa-${mode}-svc`).value = raw;
+  }
+  document.getElementById(`qa-${mode}-surname`).focus();
+}
+
+function cadetComboKey(e, mode) {
+  const dropdown = document.getElementById(`${mode}-combo-dropdown`);
+  const options  = dropdown.querySelectorAll('.cadet-combo-option');
+  const focused  = dropdown.querySelector('.cadet-combo-option.focused');
+  let idx = [...options].indexOf(focused);
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (focused) focused.classList.remove('focused');
+    const next = options[Math.min(idx + 1, options.length - 1)];
+    if (next) { next.classList.add('focused'); next.scrollIntoView({ block: 'nearest' }); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (focused) focused.classList.remove('focused');
+    const prev = options[Math.max(idx - 1, 0)];
+    if (prev) { prev.classList.add('focused'); prev.scrollIntoView({ block: 'nearest' }); }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (focused) focused.dispatchEvent(new MouseEvent('mousedown'));
+  } else if (e.key === 'Escape') {
+    dropdown.classList.remove('open');
+  }
+}
+
+// Quick-add a new cadet and immediately select them
+function quickAddCadet(mode) {
+  const svc     = document.getElementById(`qa-${mode}-svc`).value.trim();
+  const rank    = document.getElementById(`qa-${mode}-rank`).value;
+  const surname = document.getElementById(`qa-${mode}-surname`).value.trim();
+  const given   = document.getElementById(`qa-${mode}-given`).value.trim();
+  const plt     = document.getElementById(`qa-${mode}-plt`).value.trim();
+
+  if (!svc || !surname) { toast('Service number and surname are required.', 'err'); return; }
+  if (!/^\d{4,8}$/.test(svc)) { toast('Service number must be 4–8 digits.', 'err'); return; }
+  if (state.cadets.find(c => c.svcNo === svc)) { toast('Service number already registered.', 'err'); return; }
+
+  state.cadets.push({
+    svcNo: svc, rank, surname: surname.toUpperCase(),
+    given: given || '', plt: plt || '',
+    shirt: 'M', trouser: '', boot: ''
+  });
+  logAudit('add', `Cadet quick-added from Issue page: ${rank} ${surname.toUpperCase()}, ${given} (${svc})`);
+  save();
+  renderCadets();
+
+  // Clear quick-add form
+  [`qa-${mode}-svc`, `qa-${mode}-surname`, `qa-${mode}-given`, `qa-${mode}-plt`]
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById(`${mode}-quick-add`).style.display = 'none';
+
+  // Auto-select the newly added cadet
+  cadetComboSelect(mode, svc);
+  toast(`${rank} ${surname.toUpperCase()} added and selected.`);
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.cadet-combo')) {
+    document.querySelectorAll('.cadet-combo-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// Compatibility shim — lookupCadet still called from QR scanner nav functions
+function lookupCadet(mode) {
+  // Read svc from the hidden tracked value (set by combobox) or raw input
+  const svc = _cadetSvc[mode] || document.getElementById(`${mode}-svc`).value.trim();
+  if (!svc) return;
+  cadetComboSelect(mode, svc);
 }
 
 function renderReturnLoans(svc) {
@@ -3120,19 +3427,23 @@ function populateIssueItems() {
 
 function performIssue() {
   if (!AUTH.can('issue')) { toast('Insufficient permissions.', 'err'); return; }
-  const svc = document.getElementById('issue-svc').value.trim();
-  const itemId = document.getElementById('issue-item').value;
-  const qty = parseInt(document.getElementById('issue-qty').value);
+  // Use the tracked svcNo from the combobox selection (not raw input text)
+  const svc     = _cadetSvc['issue'];
+  const itemId  = document.getElementById('issue-item').value;
+  const qty     = parseInt(document.getElementById('issue-qty').value);
   const dueDate = document.getElementById('issue-duedate').value;
   const purpose = document.getElementById('issue-purpose').value;
   const remarks = document.getElementById('issue-remarks').value;
 
-  if (!svc || !itemId || !qty || !dueDate) { toast('All required fields must be completed.', 'err'); return; }
+  if (!svc)    { toast('Select a cadet from the dropdown first.', 'err'); return; }
+  if (!itemId) { toast('Select an item to issue.', 'err'); return; }
+  if (!qty)    { toast('Enter a quantity.', 'err'); return; }
+  if (!dueDate){ toast('Set a return due date.', 'err'); return; }
 
   const cadet = state.cadets.find(c => c.svcNo === svc);
   if (!cadet) { toast('Cadet not found in register.', 'err'); return; }
 
-  const item = state.items.find(i => i.id === itemId);
+  const item  = state.items.find(i => i.id === itemId);
   const avail = item.onHand - item.onLoan;
   if (qty > avail) { toast(`Insufficient stock. Only ${avail} available.`, 'err'); return; }
 
@@ -3151,6 +3462,9 @@ function performIssue() {
   logAudit('issue', `${loan.ref}: ${item.name} × ${qty} issued to ${loan.borrowerName} for ${purpose}`);
   save(); renderAll();
   toast(`${loan.ref}: ${item.name} × ${qty} issued to ${loan.borrowerName}`);
+
+  // Reset issue form
+  _cadetSvc['issue'] = '';
   document.getElementById('issue-svc').value = '';
   document.getElementById('issue-cadet-box').style.display = 'none';
   document.getElementById('issue-remarks').value = '';
@@ -3162,15 +3476,15 @@ function performReturn() {
   const checked = document.querySelectorAll('input[name="ret-loan"]:checked');
   if (!checked.length) { toast('Select at least one loan to return.', 'err'); return; }
   const condition = document.getElementById('return-condition').value;
-  const remarks = document.getElementById('return-remarks').value;
+  const remarks   = document.getElementById('return-remarks').value;
 
   checked.forEach(cb => {
     const loan = state.loans.find(l => l.ref === cb.value);
     if (!loan) return;
     loan.active = false;
-    loan.returnDate = new Date().toISOString().slice(0,10);
+    loan.returnDate      = new Date().toISOString().slice(0,10);
     loan.returnCondition = condition;
-    loan.returnRemarks = remarks;
+    loan.returnRemarks   = remarks;
     const item = state.items.find(i => i.id === loan.itemId);
     if (item) {
       item.onLoan = Math.max(0, item.onLoan - loan.qty);
@@ -3181,10 +3495,13 @@ function performReturn() {
   });
 
   save(); renderAll();
-  toast(`Return processed successfully.`);
+  toast('Return processed successfully.');
+
+  // Reset return form
+  _cadetSvc['return'] = '';
   document.getElementById('return-svc').value = '';
   document.getElementById('return-cadet-box').style.display = 'none';
-  document.getElementById('return-loan-list').innerHTML = '<div class="text-muted text-mono">Enter service number to load loans.</div>';
+  document.getElementById('return-loan-list').innerHTML = '<div class="text-muted text-mono">Select a cadet to load loans.</div>';
   document.getElementById('return-remarks').value = '';
 }
 
@@ -3966,14 +4283,15 @@ function quickNavIssueToSvc(svcNo) {
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-issue').classList.add('active');
   document.querySelectorAll('.nav-tab')[2].classList.add('active');
-  document.getElementById('issue-svc').value = svcNo; lookupCadet('issue');
+  // Use combobox selection
+  setTimeout(() => cadetComboSelect('issue', svcNo), 50);
 }
 function quickNavReturnSvc(svcNo) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-issue').classList.add('active');
   document.querySelectorAll('.nav-tab')[2].classList.add('active');
-  document.getElementById('return-svc').value = svcNo; lookupCadet('return');
+  setTimeout(() => cadetComboSelect('return', svcNo), 50);
 }
 
 // =====================================================================
