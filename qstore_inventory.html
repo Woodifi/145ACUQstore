@@ -268,18 +268,35 @@
     width: 180px; padding: 10px; margin: 4px;
     border: 1px solid #333; font-family: Arial, sans-serif;
     background: #fff; color: #000; page-break-inside: avoid;
+    break-inside: avoid;
   }
-  .print-label canvas { width: 120px !important; height: 120px !important; }
+  /* Use img not canvas for print — canvas is replaced with img via toDataURL */
+  .print-label img.pl-qr { width: 120px; height: 120px; display: block; }
   .print-label .pl-title { font-size: 11px; font-weight: bold; text-align: center; margin-top: 4px; word-break: break-word; }
   .print-label .pl-sub { font-size: 9px; text-align: center; color: #555; margin-top: 2px; }
   .print-label .pl-nsn { font-size: 8px; font-family: monospace; color: #333; margin-top: 2px; }
 
+  /* Print-only label sheet — fixed overlay covers entire page */
+  #print-label-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 99998;
+    background: #fff;
+    padding: 16px;
+    overflow: auto;
+  }
+  #print-label-overlay.open { display: block; }
+
+  #print-label-sheet {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+
   @media print {
-    header, nav, .no-print { display: none !important; }
-    main { padding: 0 !important; }
-    .page { display: block !important; }
-    .page:not(#page-print-labels) { display: none !important; }
+    /* Hide everything except our label overlay */
+    body > * { display: none !important; }
+    #print-label-overlay { display: block !important; position: static !important; overflow: visible !important; }
     #print-label-sheet { display: flex !important; flex-wrap: wrap; }
+    .print-label { border: 1px solid #333 !important; background: #fff !important; }
+    .print-label img.pl-qr { width: 120px !important; height: 120px !important; }
   }
 
   /* Scanner */
@@ -1365,7 +1382,7 @@
 <div id="page-reports" class="page">
   <div class="alert-box info mb-12">
     <div class="alert-title">ADF Policy Note</div>
-    Reports are generated in accordance with CADET ADMIN INSTRUCTIONS, DFENCE Logistics Directives, and the AAC Corps Standing Orders. Physical DA Forms should be counter-signed by OC / CO and retained in the unit Q-store records (7-year retention per CADET LOG 01-22).
+    Reports are generated in accordance with CADET ADMIN INSTRUCTIONS, DEFENCE Logistics Directives, and the AAC Corps Standing Orders. Physical DA Forms should be counter-signed by OC / CO and retained in the unit Q-store records (7-year retention per CADET LOG 01-22).
   </div>
   <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
     <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-blue)" onclick="generateReport('stocktake')">
@@ -1492,7 +1509,7 @@
 
   <!-- Hidden print sheet — only visible during print -->
   <div id="page-print-labels" style="display:none">
-    <div id="print-label-sheet"></div>
+    <div id="print-label-sheet-legacy"></div>
   </div>
 </div>
 
@@ -1863,11 +1880,11 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Unit Name</label>
-            <input type="text" class="form-input" id="set-unit-name" placeholder="e.g. 1 Australian Cadet Training Unit">
+            <input type="text" class="form-input" id="set-unit-name" placeholder="e.g. 145 Australian Army Cadet Unit">
           </div>
           <div class="form-group">
             <label class="form-label">Unit Short Code</label>
-            <input type="text" class="form-input" id="set-unit-code" placeholder="e.g. 1 ACTU">
+            <input type="text" class="form-input" id="set-unit-code" placeholder="e.g. 145 ACU">
           </div>
           <div class="form-group">
             <label class="form-label">Quartermaster Name</label>
@@ -1917,7 +1934,7 @@
           <div class="text-mono" style="color:var(--tan);font-size:10px;margin-bottom:8px;">APPLICABLE DIRECTIVES</div>
           • CADET LOG 01-22 — Cadet Logistics Instructions<br>
           • AAFC/AACC Corps Standing Orders — Q-Store Management<br>
-          • DFENCE Procurement Policy Framework 2023<br>
+          • DEFENCE Procurement Policy Framework 2023<br>
           • DA Form 2062 — Hand Receipt / Annex<br>
           • DA Form 2404 — Equipment Inspection Record<br>
           • ASDEFCON (Support) Template<br>
@@ -4268,32 +4285,103 @@ function clearQrSel() {
 function printSelectedLabels() {
   const type = document.getElementById('qr-type').value;
   if (!qrSelectedIds.size) { toast('Select at least one label to print.', 'warn'); return; }
+
   loadQrLib(() => {
-    const records = qrRecords(type).filter(r => qrSelectedIds.has(qrRecordLabel(type,r).id));
+    const records = qrRecords(type).filter(r => qrSelectedIds.has(qrRecordLabel(type, r).id));
+    if (!records.length) { toast('No matching records to print.', 'warn'); return; }
+
     const sheet = document.getElementById('print-label-sheet');
-    sheet.innerHTML = '';
-    let done = 0;
-    records.forEach(r => {
+    sheet.innerHTML = '<div style="font-family:Arial;font-size:12px;color:#666;padding:16px;">Generating labels…</div>';
+
+    // Build all QR codes as off-screen canvases first, then convert to img data URLs
+    // This avoids the canvas-not-printing problem in all browsers.
+    const total = records.length;
+    let completed = 0;
+    const results = new Array(total); // preserve order
+
+    records.forEach((r, idx) => {
       const lbl  = qrRecordLabel(type, r);
       const data = qrPayload(type, r);
-      const wrap = document.createElement('div'); wrap.className = 'print-label';
-      const canvas = document.createElement('canvas');
-      const t = document.createElement('div'); t.className = 'pl-title'; t.textContent = lbl.title;
-      const s = document.createElement('div'); s.className = 'pl-sub';   s.textContent = lbl.sub;
-      const n = document.createElement('div'); n.className = 'pl-nsn';
-      n.textContent = type.toUpperCase() + ' · ' + new Date().toLocaleDateString('en-AU');
-      wrap.append(canvas, t, s, n);
-      sheet.appendChild(wrap);
-      _renderQRtoCanvas(canvas, data, 120, '#000000', '#ffffff', () => {
-        done++;
-        if (done === records.length) {
-          const pd = document.getElementById('page-print-labels');
-          pd.style.display = 'block';
-          setTimeout(() => { window.print(); pd.style.display = 'none'; }, 300);
+
+      // Render to a temporary off-screen canvas
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width  = 120;
+      offCanvas.height = 120;
+
+      _renderQRtoCanvas(offCanvas, data, 120, '#000000', '#ffffff', (err) => {
+        if (err) {
+          console.error('QR render error for', lbl.title, err);
+          results[idx] = null;
+        } else {
+          // Convert canvas → base64 PNG data URL immediately after render
+          try {
+            results[idx] = offCanvas.toDataURL('image/png');
+          } catch(e) {
+            console.error('toDataURL failed', e);
+            results[idx] = null;
+          }
+        }
+
+        completed++;
+        if (completed === total) {
+          // All QR codes rendered — now build the HTML sheet
+          _buildPrintSheet(sheet, type, records, results);
         }
       });
     });
   });
+}
+
+function _buildPrintSheet(sheet, type, records, dataUrls) {
+  const today = new Date().toLocaleDateString('en-AU');
+  sheet.innerHTML = '';
+
+  records.forEach((r, idx) => {
+    const lbl     = qrRecordLabel(type, r);
+    const dataUrl = dataUrls[idx];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'print-label';
+
+    if (dataUrl) {
+      const img    = document.createElement('img');
+      img.className = 'pl-qr';
+      img.src       = dataUrl;
+      img.alt       = 'QR code for ' + lbl.title;
+      // Ensure image is loaded before print (should already be since it's a data URL)
+      wrap.appendChild(img);
+    } else {
+      // Fallback: show error placeholder
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'width:120px;height:120px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;text-align:center;';
+      errDiv.textContent = 'QR Error';
+      wrap.appendChild(errDiv);
+    }
+
+    const t = document.createElement('div'); t.className = 'pl-title'; t.textContent = lbl.title;
+    const s = document.createElement('div'); s.className = 'pl-sub';   s.textContent = lbl.sub;
+    const n = document.createElement('div'); n.className = 'pl-nsn';
+    n.textContent = type.toUpperCase() + '  ·  ' + today;
+
+    wrap.append(t, s, n);
+    sheet.appendChild(wrap);
+  });
+
+  // Show the overlay
+  document.getElementById('print-label-overlay').classList.add('open');
+
+  // Wait for all img data URLs to be "painted" then trigger print
+  // requestAnimationFrame ensures the browser has rendered the images
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
+}
+
+function closePrintOverlay() {
+  document.getElementById('print-label-overlay').classList.remove('open');
+  document.getElementById('print-label-sheet').innerHTML = '';
 }
 
 // =====================================================================
@@ -4661,5 +4749,21 @@ function runImport() {
   toast('Import complete: ' + added + ' added, ' + updated + ' updated.');
 }
 </script>
+
+<!-- ====== PRINT LABEL OVERLAY — img tags for reliable cross-browser printing ====== -->
+<div id="print-label-overlay">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #C4A96B" class="no-print">
+    <span style="font-family:Arial;font-size:14px;font-weight:bold;color:#3B4A2F;">
+      Q-Store IMS — Label Print Sheet
+    </span>
+    <div style="display:flex;gap:8px">
+      <button onclick="window.print()" style="padding:7px 18px;background:#3B4A2F;color:#C4A96B;border:1px solid #C4A96B;font-family:Arial;font-size:12px;cursor:pointer;font-weight:bold;letter-spacing:1px;">⎙ PRINT</button>
+      <button onclick="closePrintOverlay()" style="padding:7px 14px;background:transparent;color:#666;border:1px solid #ccc;font-family:Arial;font-size:12px;cursor:pointer;">✕ Close</button>
+    </div>
+  </div>
+  <div id="print-label-sheet"></div>
+</div>
+
+<div id="toast-container"></div>
 </body>
 </html>
