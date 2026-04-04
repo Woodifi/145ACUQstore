@@ -8,7 +8,8 @@
 <!-- MSAL Browser v2 — loaded synchronously so it is available before any app code runs.
      No integrity hash: avoids SRI mismatch blocking the script silently.
      Primary CDN: Microsoft's own MSAL CDN. Fallback: jsDelivr mirror. -->
-<script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+     <script>
 (function() {
   function loadScript(src, onload, onerror) {
     var s = document.createElement('script');
@@ -4767,5 +4768,162 @@ function runImport() {
 </div>
 
 <div id="toast-container"></div>
+     <script>
+// ===== QR CODE GENERATION & PRINTING =====
+
+function generateQR(text) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, text, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' }
+    }, (error) => {
+      if (error) {
+        console.error('QR code generation failed:', error);
+        resolve(null);
+      } else {
+        resolve(canvas);
+      }
+    });
+  });
+}
+
+async function printLabels() {
+  const selectedCards = document.querySelectorAll('.label-card.selected');
+  
+  if (selectedCards.length === 0) {
+    showToast('Please select at least one item to print', 'warn');
+    return;
+  }
+
+  const printSheet = document.getElementById('print-label-sheet');
+  const overlay = document.getElementById('print-label-overlay');
+  
+  printSheet.innerHTML = '';
+
+  for (const card of selectedCards) {
+    const title = card.querySelector('.lc-title').textContent;
+    const sub = card.querySelector('.lc-sub').textContent;
+    const qrData = `INV:${title}:${sub}`;
+
+    const canvas = await generateQR(qrData);
+    
+    if (!canvas) continue;
+
+    const label = document.createElement('div');
+    label.className = 'print-label';
+    label.innerHTML = `
+      <img class="pl-qr" src="${canvas.toDataURL('image/png')}" alt="QR Code">
+      <div class="pl-title">${title}</div>
+      <div class="pl-sub">${sub}</div>
+      <div class="pl-nsn">${qrData}</div>
+    `;
+    
+    printSheet.appendChild(label);
+  }
+
+  overlay.classList.add('open');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      overlay.classList.remove('open');
+    }, 500);
+  }, 100);
+}
+
+// ===== QR CODE SCANNING =====
+
+let qrScanner = null;
+let isScanning = false;
+
+async function startQRScanner() {
+  const container = document.getElementById('qr-video-container');
+  const video = document.getElementById('qr-video');
+  
+  if (!container || !video) {
+    showToast('Scanner container not found', 'err');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    
+    video.srcObject = stream;
+    isScanning = true;
+    scanQRCode(video);
+  } catch (error) {
+    showToast('Camera access denied: ' + error.message, 'err');
+  }
+}
+
+function scanQRCode(video) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const resultBox = document.getElementById('qr-scan-result');
+
+  function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      
+      if (code) {
+        const qrText = code.data;
+        
+        if (qrText.startsWith('INV:')) {
+          isScanning = false;
+          handleScannedQR(qrText);
+          
+          if (resultBox) {
+            resultBox.innerHTML = `✓ QR Scanned: ${qrText}`;
+            resultBox.style.borderColor = 'var(--accent-green)';
+          }
+          return;
+        } else {
+          if (resultBox) {
+            resultBox.innerHTML = `⚠ Invalid QR format. Expected format: INV:ITEM_NAME:NSN`;
+            resultBox.style.borderColor = 'var(--accent-amber)';
+          }
+        }
+      }
+    }
+
+    if (isScanning) {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  tick();
+}
+
+function handleScannedQR(qrData) {
+  const parts = qrData.split(':');
+  
+  if (parts.length < 3 || parts[0] !== 'INV') {
+    showToast('Invalid inventory QR code format', 'err');
+    return;
+  }
+
+  const itemName = parts[1];
+  const nsn = parts[2];
+  
+  console.log(`Scanned Item: ${itemName}, NSN: ${nsn}`);
+  showToast(`Scanned: ${itemName}`, 'ok');
+}
+
+function stopQRScanner() {
+  isScanning = false;
+  const video = document.getElementById('qr-video');
+  if (video && video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+  }
+}
+</script>
 </body>
 </html>
