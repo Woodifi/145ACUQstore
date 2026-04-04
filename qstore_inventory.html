@@ -8,8 +8,7 @@
 <!-- MSAL Browser v2 — loaded synchronously so it is available before any app code runs.
      No integrity hash: avoids SRI mismatch blocking the script silently.
      Primary CDN: Microsoft's own MSAL CDN. Fallback: jsDelivr mirror. -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-     <script>
+<script>
 (function() {
   function loadScript(src, onload, onerror) {
     var s = document.createElement('script');
@@ -33,8 +32,6 @@
     });
   });
 })();
-     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 </script>
 <style>
   :root {
@@ -293,57 +290,14 @@
     display: flex; flex-wrap: wrap; gap: 4px;
   }
 
- @media print {
-  /* Hide everything */
-  * { display: none !important; }
-  
-  /* Show only the label overlay and its contents */
-  #print-label-overlay,
-  #print-label-overlay * { display: block !important; }
-  
-  #print-label-overlay {
-    position: static !important;
-    background: #fff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-    z-index: auto !important;
+  @media print {
+    /* Hide everything except our label overlay */
+    body > * { display: none !important; }
+    #print-label-overlay { display: block !important; position: static !important; overflow: visible !important; }
+    #print-label-sheet { display: flex !important; flex-wrap: wrap; }
+    .print-label { border: 1px solid #333 !important; background: #fff !important; }
+    .print-label img.pl-qr { width: 120px !important; height: 120px !important; }
   }
-  
-  #print-label-sheet {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0 !important;
-  }
-  
-  .print-label {
-    display: inline-flex !important;
-    flex-direction: column;
-    align-items: center;
-    width: 180px;
-    height: auto;
-    padding: 10px;
-    margin: 4px;
-    border: 1px solid #333 !important;
-    background: #fff !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-  
-  .print-label img.pl-qr {
-    width: 120px !important;
-    height: 120px !important;
-    display: block !important;
-  }
-  
-  .print-label .pl-title,
-  .print-label .pl-sub,
-  .print-label .pl-nsn {
-    display: block !important;
-  }
-}
 
   /* Scanner */
   #qr-video-container {
@@ -935,17 +889,17 @@
 
 <header>
   <div class="header-top">
-    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DEFENCE ACT 1903 PROTECTED ⬛</span>
+    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DFENCE ACT 1903 PROTECTED ⬛</span>
     <span class="header-datetime" id="clock">--</span>
   </div>
   <div class="header-main">
     <div class="unit-crest">AAC</div>
     <div class="header-title">
       <h1>Q-Store Inventory Management System</h1>
-      <div class="subtitle">Australian Army Cadets · Unit Quartermaster Module · IMS v3.1</div>
+      <div class="subtitle">Australian Army Cadets · Corps / Unit Quartermaster Module · IMS v3.1</div>
     </div>
     <div class="header-status">
-      <span class="status-pill unit" id="unit-name-badge">145 ACU</span>
+      <span class="status-pill unit" id="unit-name-badge">1 ACTU</span>
       <div class="session-bar" id="session-bar" onclick="showLogoutConfirm()" title="Click to sign out">
         <div class="sb-avatar role-co" id="session-avatar">?</div>
         <div>
@@ -1428,7 +1382,7 @@
 <div id="page-reports" class="page">
   <div class="alert-box info mb-12">
     <div class="alert-title">ADF Policy Note</div>
-    Reports are generated in accordance with CADET ADMIN INSTRUCTIONS, DEFENCE Logistics Directives, and the AAC Corps Standing Orders. Physical DA Forms should be counter-signed by OC / CO and retained in the unit Q-store records (7-year retention per CADET LOG 01-22).
+    Reports are generated in accordance with CADET ADMIN INSTRUCTIONS, DFENCE Logistics Directives, and the AAC Corps Standing Orders. Physical DA Forms should be counter-signed by OC / CO and retained in the unit Q-store records (7-year retention per CADET LOG 01-22).
   </div>
   <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
     <div class="stat-card" style="cursor:pointer;border-top-color:var(--accent-blue)" onclick="generateReport('stocktake')">
@@ -1926,11 +1880,11 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Unit Name</label>
-            <input type="text" class="form-input" id="set-unit-name" placeholder="e.g. 145 Australian Army Cadet Unit">
+            <input type="text" class="form-input" id="set-unit-name" placeholder="e.g. 1 Australian Cadet Training Unit">
           </div>
           <div class="form-group">
             <label class="form-label">Unit Short Code</label>
-            <input type="text" class="form-input" id="set-unit-code" placeholder="e.g. 145 ACU">
+            <input type="text" class="form-input" id="set-unit-code" placeholder="e.g. 1 ACTU">
           </div>
           <div class="form-group">
             <label class="form-label">Quartermaster Name</label>
@@ -1980,7 +1934,7 @@
           <div class="text-mono" style="color:var(--tan);font-size:10px;margin-bottom:8px;">APPLICABLE DIRECTIVES</div>
           • CADET LOG 01-22 — Cadet Logistics Instructions<br>
           • AAFC/AACC Corps Standing Orders — Q-Store Management<br>
-          • DEFENCE Procurement Policy Framework 2023<br>
+          • DFENCE Procurement Policy Framework 2023<br>
           • DA Form 2062 — Hand Receipt / Annex<br>
           • DA Form 2404 — Equipment Inspection Record<br>
           • ASDEFCON (Support) Template<br>
@@ -4811,170 +4765,5 @@ function runImport() {
 </div>
 
 <div id="toast-container"></div>
-     <script>
-// ===== QR CODE GENERATION & PRINTING =====
-
-function generateQR(text) {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    QRCode.toCanvas(canvas, text, {
-      width: 300,
-      margin: 2,
-      color: { dark: '#000000', light: '#FFFFFF' }
-    }, (error) => {
-      if (error) {
-        console.error('QR code generation failed:', error);
-        resolve(null);
-      } else {
-        resolve(canvas);
-      }
-    });
-  });
-}
-
-async function printLabels() {
-  const selectedCards = document.querySelectorAll('.label-card.selected');
-  
-  if (selectedCards.length === 0) {
-    showToast('Please select at least one item to print', 'warn');
-    return;
-  }
-
-  const printSheet = document.getElementById('print-label-sheet');
-  const overlay = document.getElementById('print-label-overlay');
-  
-  printSheet.innerHTML = '';
-
-  for (const card of selectedCards) {
-    const title = card.querySelector('.lc-title').textContent;
-    const sub = card.querySelector('.lc-sub').textContent;
-    const qrData = `INV:${title}:${sub}`;
-
-    const canvas = await generateQR(qrData);
-    
-    if (!canvas) continue;
-
-    const label = document.createElement('div');
-    label.className = 'print-label';
-    label.innerHTML = `
-      <img class="pl-qr" src="${canvas.toDataURL('image/png')}" alt="QR Code">
-      <div class="pl-title">${title}</div>
-      <div class="pl-sub">${sub}</div>
-      <div class="pl-nsn">${qrData}</div>
-    `;
-    
-    printSheet.appendChild(label);
-  }
-
-  overlay.classList.add('open');
-  
-  // Use native print dialog
-  document.addEventListener('beforeprint', function onBeforePrint() {
-    document.removeEventListener('beforeprint', onBeforePrint);
-  }, { once: true });
-  
-  // Delay print to ensure images load
-  setTimeout(() => {
-    window.print();
-    
-    setTimeout(() => {
-      overlay.classList.remove('open');
-    }, 100);
-  }, 300);
-}
-
-// ===== QR CODE SCANNING =====
-
-let qrScanner = null;
-let isScanning = false;
-
-async function startQRScanner() {
-  const container = document.getElementById('qr-video-container');
-  const video = document.getElementById('qr-video');
-  
-  if (!container || !video) {
-    showToast('Scanner container not found', 'err');
-    return;
-  }
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
-    });
-    
-    video.srcObject = stream;
-    isScanning = true;
-    scanQRCode(video);
-  } catch (error) {
-    showToast('Camera access denied: ' + error.message, 'err');
-  }
-}
-
-function scanQRCode(video) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const resultBox = document.getElementById('qr-scan-result');
-
-  function tick() {
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, canvas.width, canvas.height);
-      
-      if (code) {
-        const qrText = code.data;
-        
-        if (qrText.startsWith('INV:')) {
-          isScanning = false;
-          handleScannedQR(qrText);
-          
-          if (resultBox) {
-            resultBox.innerHTML = `✓ QR Scanned: ${qrText}`;
-            resultBox.style.borderColor = 'var(--accent-green)';
-          }
-          return;
-        } else {
-          if (resultBox) {
-            resultBox.innerHTML = `⚠ Invalid QR format. Expected format: INV:ITEM_NAME:NSN`;
-            resultBox.style.borderColor = 'var(--accent-amber)';
-          }
-        }
-      }
-    }
-
-    if (isScanning) {
-      requestAnimationFrame(tick);
-    }
-  }
-
-  tick();
-}
-
-function handleScannedQR(qrData) {
-  const parts = qrData.split(':');
-  
-  if (parts.length < 3 || parts[0] !== 'INV') {
-    showToast('Invalid inventory QR code format', 'err');
-    return;
-  }
-
-  const itemName = parts[1];
-  const nsn = parts[2];
-  
-  console.log(`Scanned Item: ${itemName}, NSN: ${nsn}`);
-  showToast(`Scanned: ${itemName}`, 'ok');
-}
-
-function stopQRScanner() {
-  isScanning = false;
-  const video = document.getElementById('qr-video');
-  if (video && video.srcObject) {
-    video.srcObject.getTracks().forEach(track => track.stop());
-  }
-}
-</script>
 </body>
 </html>
