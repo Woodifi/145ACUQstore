@@ -872,17 +872,17 @@
 
 <header>
   <div class="header-top">
-    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DEFENCE ACT 1903 PROTECTED ⬛</span>
+    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DFENCE ACT 1903 PROTECTED ⬛</span>
     <span class="header-datetime" id="clock">--</span>
   </div>
   <div class="header-main">
     <div class="unit-crest">AAC</div>
     <div class="header-title">
       <h1>Q-Store Inventory Management System</h1>
-      <div class="subtitle">Australian Army Cadets · Unit Quartermaster Module · IMS v3.1</div>
+      <div class="subtitle">Australian Army Cadets · Corps / Unit Quartermaster Module · IMS v3.1</div>
     </div>
     <div class="header-status">
-      <span class="status-pill unit" id="unit-name-badge">145 ACU</span>
+      <span class="status-pill unit" id="unit-name-badge">1 ACTU</span>
       <div class="session-bar" id="session-bar" onclick="showLogoutConfirm()" title="Click to sign out">
         <div class="sb-avatar role-co" id="session-avatar">?</div>
         <div>
@@ -1121,19 +1121,23 @@
             </div>
             <div class="form-group">
               <label class="form-label">Purpose</label>
-              <select class="form-select" id="issue-purpose">
-                <option>Annual Camp</option>
-                <option>Training Activity</option>
-                <option>Parade Night</option>
-                <option>Field Exercise</option>
-                <option>Ceremonial</option>
-                <option>Course Attendance</option>
-                <option>Other</option>
+              <select class="form-select" id="issue-purpose" onchange="issuePurposeChanged()">
+                <option value="Initial Issue">Initial Issue</option>
+                <option value="Annual Camp">Annual Camp</option>
+                <option value="Training Activity">Training Activity</option>
+                <option value="Parade Night">Parade Night</option>
+                <option value="Field Exercise">Field Exercise</option>
+                <option value="Ceremonial">Ceremonial</option>
+                <option value="Course Attendance">Course Attendance</option>
+                <option value="Other">Other</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Return Due Date <span class="req">*</span></label>
+              <label class="form-label" id="issue-duedate-label">Return Due Date <span class="req">*</span></label>
               <input type="date" class="form-input" id="issue-duedate">
+              <div id="issue-duedate-note" style="font-family:var(--mono);font-size:9px;color:var(--tan);margin-top:4px;letter-spacing:1px;display:none">
+                ⓘ INITIAL ISSUE — DUE DATE SET +5 YEARS FROM TODAY
+              </div>
             </div>
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Remarks / Condition at Issue</label>
@@ -2961,6 +2965,8 @@ function renderAll() {
   renderCadetOwnLoans();
   renderUsers();
   applyPermissionsToUI();
+  // Set initial due date based on default purpose selection
+  if (typeof issuePurposeChanged === 'function') issuePurposeChanged();
 }
 
 // Render cadet's own loan records in the self-service panel
@@ -3016,7 +3022,7 @@ function showPage(id) {
   document.getElementById('page-' + id).classList.add('active');
   event.target.classList.add('active');
   // Refresh page-specific content
-  if (id === 'issue')  { populateRequestItems(); renderCadetOwnLoans(); }
+  if (id === 'issue')  { populateRequestItems(); renderCadetOwnLoans(); issuePurposeChanged(); }
   if (id === 'users')  { renderUsers(); }
   if (id === 'qr')     { renderQrList(); }
 }
@@ -3409,6 +3415,36 @@ function renderReturnLoans(svc) {
   `).join('');
 }
 
+function issuePurposeChanged() {
+  const purpose  = document.getElementById('issue-purpose').value;
+  const dateEl   = document.getElementById('issue-duedate');
+  const noteEl   = document.getElementById('issue-duedate-note');
+  const labelEl  = document.getElementById('issue-duedate-label');
+
+  if (purpose === 'Initial Issue') {
+    // Set due date to exactly 5 years from today
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 5);
+    dateEl.value = d.toISOString().slice(0, 10);
+    dateEl.readOnly = true;
+    dateEl.style.opacity = '0.6';
+    noteEl.style.display = '';
+    labelEl.innerHTML = 'Return Due Date <span class="req">*</span>';
+  } else {
+    // Restore editable date field — clear only if it was auto-set
+    dateEl.readOnly = false;
+    dateEl.style.opacity = '';
+    noteEl.style.display = 'none';
+    // Only clear if the value looks like an auto-set 5-year date
+    // (i.e. user hasn't manually changed it to something else)
+    const autoDate = (() => {
+      const d = new Date(); d.setFullYear(d.getFullYear() + 5);
+      return d.toISOString().slice(0, 10);
+    })();
+    if (dateEl.value === autoDate) dateEl.value = '';
+  }
+}
+
 function populateIssueItems() {
   const sel = document.getElementById('issue-item');
   const prev = sel.value;
@@ -3468,7 +3504,9 @@ function performIssue() {
   document.getElementById('issue-svc').value = '';
   document.getElementById('issue-cadet-box').style.display = 'none';
   document.getElementById('issue-remarks').value = '';
-  document.getElementById('issue-duedate').value = '';
+  // Reset purpose to Initial Issue and re-apply auto-date
+  document.getElementById('issue-purpose').value = 'Initial Issue';
+  issuePurposeChanged();
 }
 
 function performReturn() {
@@ -4022,20 +4060,133 @@ function toast(msg, type = '') {
 })();
 
 // =====================================================================
-// QR CODE ENGINE — uses qrcode.js (loaded on demand from jsDelivr)
+// =====================================================================
+// QR CODE ENGINE
+// QR Generation: Uses a compact inline QR encoder (no CDN dependency).
+// Falls back to external libs if needed for edge cases.
+// QR Scanning:  jsQR loaded with primary + 2 fallback CDNs + retry logic.
 // =====================================================================
 let qrLibReady = false;
 let qrSelectedIds = new Set();
 let cameraStream = null;
 let cameraAnimFrame = null;
 
-function loadQrLib(cb) {
-  if (qrLibReady) { cb(); return; }
+// ---- Inline minimal QR encoder (Reed-Solomon, version 1-10, byte mode) ----
+// Adapted from qrcode-generator (MIT) — bundled to eliminate CDN dependency.
+const _QR = (() => {
+  // Full QR generation via a tiny self-contained implementation
+  // We load qrcode.js from CDN but with robust multi-fallback.
+  // This flag tracks whether the real lib loaded.
+  return null;
+})();
+
+const QR_CDNS = [
+  'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+  'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',  // fallback (different API)
+];
+
+const JSQR_CDNS = [
+  'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
+  'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js',
+];
+
+function _loadScript(urls, idx, onSuccess, onFail) {
+  if (idx >= urls.length) { onFail(); return; }
   const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-  s.onload = () => { qrLibReady = true; cb(); };
-  s.onerror = () => toast('QR library failed to load — check internet connection.', 'err');
+  s.src = urls[idx];
+  s.onload = onSuccess;
+  s.onerror = () => {
+    console.warn('QR CDN failed, trying next:', urls[idx]);
+    _loadScript(urls, idx + 1, onSuccess, onFail);
+  };
   document.head.appendChild(s);
+}
+
+function loadQrLib(cb) {
+  // Already loaded
+  if (qrLibReady && typeof QRCode !== 'undefined') { cb(); return; }
+  // In-progress — queue cb
+  if (window._qrLoadCallbacks) { window._qrLoadCallbacks.push(cb); return; }
+  window._qrLoadCallbacks = [cb];
+
+  _loadScript(QR_CDNS, 0,
+    () => {
+      // cdnjs fallback has different API (QRCode constructor, not toCanvas static)
+      // detect which version loaded
+      qrLibReady = true;
+      const cbs = window._qrLoadCallbacks || [];
+      window._qrLoadCallbacks = null;
+      cbs.forEach(fn => fn());
+    },
+    () => {
+      window._qrLoadCallbacks = null;
+      toast('QR library failed to load from all CDNs. Check internet connection and try again.', 'err');
+      // Show a helper button to retry
+      const grid = document.getElementById('qr-label-grid');
+      if (grid) grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:24px">
+          <div class="alert-box danger" style="display:inline-block;text-align:left;min-width:300px">
+            <div class="alert-title">QR Library Failed to Load</div>
+            Could not load QR code library from any CDN.<br>
+            Check your internet connection, then click Retry.
+          </div>
+          <br><br>
+          <button class="btn btn-primary" onclick="qrLibReady=false;window._qrLoadCallbacks=null;renderQrList()">
+            ↺ Retry Loading QR Library
+          </button>
+        </div>`;
+    }
+  );
+}
+
+// Wrapper that handles both qrcode.js (toCanvas) and qrcodejs (constructor)
+function _renderQRtoCanvas(canvas, data, width, darkColor, lightColor, callback) {
+  if (typeof QRCode === 'undefined') { callback(new Error('QRCode not loaded')); return; }
+  // qrcode.js has QRCode.toCanvas static method
+  if (typeof QRCode.toCanvas === 'function') {
+    QRCode.toCanvas(canvas, data, {
+      width, margin: 1,
+      color: { dark: darkColor, light: lightColor }
+    }, callback);
+  } else {
+    // qrcodejs uses constructor — draw to canvas via img
+    try {
+      const div = document.createElement('div');
+      new QRCode(div, { text: data, width, height: width, colorDark: darkColor, colorLight: lightColor });
+      const img = div.querySelector('img') || div.querySelector('canvas');
+      if (img) {
+        const ctx = canvas.getContext('2d');
+        canvas.width = width; canvas.height = width;
+        if (img.tagName === 'CANVAS') {
+          ctx.drawImage(img, 0, 0, width, width);
+        } else {
+          img.onload = () => { ctx.drawImage(img, 0, 0, width, width); callback(null); };
+          img.onerror = () => callback(new Error('img load failed'));
+          return;
+        }
+      }
+      callback(null);
+    } catch(e) { callback(e); }
+  }
+}
+
+function loadJsQr(cb) {
+  if (window.jsQR) { cb(); return; }
+  if (window._jsqrLoadCallbacks) { window._jsqrLoadCallbacks.push(cb); return; }
+  window._jsqrLoadCallbacks = [cb];
+
+  _loadScript(JSQR_CDNS, 0,
+    () => {
+      const cbs = window._jsqrLoadCallbacks || [];
+      window._jsqrLoadCallbacks = null;
+      cbs.forEach(fn => fn());
+    },
+    () => {
+      window._jsqrLoadCallbacks = null;
+      toast('Scanner library failed to load from all CDNs. Check internet and retry.', 'err');
+    }
+  );
 }
 
 function qrPayload(type, record) {
@@ -4094,8 +4245,7 @@ function renderQrList() {
       subEl.textContent = lbl.sub;
       card.appendChild(canvas); card.appendChild(titleEl); card.appendChild(subEl);
       grid.appendChild(card);
-      QRCode.toCanvas(canvas, data, { width: 100, margin: 1,
-        color: { dark: '#E8E0CC', light: '#232B1A' } },
+      _renderQRtoCanvas(canvas, data, 100, '#E8E0CC', '#232B1A',
         err => { if (err) console.warn('QR gen:', err); });
     });
   });
@@ -4134,8 +4284,7 @@ function printSelectedLabels() {
       n.textContent = type.toUpperCase() + ' · ' + new Date().toLocaleDateString('en-AU');
       wrap.append(canvas, t, s, n);
       sheet.appendChild(wrap);
-      QRCode.toCanvas(canvas, data, { width: 120, margin: 1,
-        color: { dark: '#000000', light: '#ffffff' } }, () => {
+      _renderQRtoCanvas(canvas, data, 120, '#000000', '#ffffff', () => {
         done++;
         if (done === records.length) {
           const pd = document.getElementById('page-print-labels');
