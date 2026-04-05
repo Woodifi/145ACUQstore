@@ -4987,21 +4987,21 @@ if (loginScreen) {
     e.preventDefault();
     e.stopPropagation();
     loginScreen.style.opacity = '0.7';
-    loginScreen.style.border = '3px dashed var(--tan)';
+    loginScreen.style.backgroundColor = 'rgba(196,169,107,0.1)';
   });
 
   loginScreen.addEventListener('dragleave', (e) => {
     e.preventDefault();
     e.stopPropagation();
     loginScreen.style.opacity = '1';
-    loginScreen.style.border = 'none';
+    loginScreen.style.backgroundColor = 'var(--dark-bg)';
   });
 
   loginScreen.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
     loginScreen.style.opacity = '1';
-    loginScreen.style.border = 'none';
+    loginScreen.style.backgroundColor = 'var(--dark-bg)';
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -5013,32 +5013,43 @@ if (loginScreen) {
           try {
             const backupData = JSON.parse(event.target.result);
             
-            // Restore data
+            console.log('Installing backup data:', backupData);
+            
+            // Restore all data to localStorage
             if (backupData.users) {
               localStorage.setItem('qstore_users', JSON.stringify(backupData.users));
+              console.log('✓ Restored users:', Object.keys(backupData.users).length);
             }
             if (backupData.inventory) {
               localStorage.setItem('qstore_inventory', JSON.stringify(backupData.inventory));
+              console.log('✓ Restored inventory items:', backupData.inventory.length || 0);
             }
             if (backupData.cadets) {
               localStorage.setItem('qstore_cadets', JSON.stringify(backupData.cadets));
+              console.log('✓ Restored cadets:', backupData.cadets.length || 0);
             }
             if (backupData.loans) {
               localStorage.setItem('qstore_loans', JSON.stringify(backupData.loans));
+              console.log('✓ Restored loans:', backupData.loans.length || 0);
             }
             if (backupData.settings) {
               localStorage.setItem('qstore_settings', JSON.stringify(backupData.settings));
+              console.log('✓ Restored settings');
             }
             if (backupData.auditLog) {
               localStorage.setItem('qstore_auditLog', JSON.stringify(backupData.auditLog));
+              console.log('✓ Restored audit log:', backupData.auditLog.length || 0);
             }
             
-            // Show success and refresh
-            alert('✅ Installation complete! Refreshing app...');
-            location.reload();
+            // Refresh the login screen to show new users
+            console.log('Refreshing login screen...');
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
             
           } catch (error) {
-            alert('❌ Invalid installation file. Please check the file and try again.');
+            console.error('Installation error:', error);
+            alert('❌ Invalid installation file. Please check the file and try again.\n\nError: ' + error.message);
           }
         };
         reader.readAsText(file);
