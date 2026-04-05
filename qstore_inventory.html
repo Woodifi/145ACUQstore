@@ -37,10 +37,7 @@
   :root {
     --army-green: #3B4A2F;
     --olive: #4A5C35;
-    --field-green: #5A6E40;
     --tan: #C4A96B;
-    --khaki: #B8A86A;
-    --sand: #D4C08A;
     --dark-bg: #1A1F14;
     --panel-bg: #232B1A;
     --panel-border: #3B4A2F;
@@ -163,18 +160,6 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { display:inline-block; animation: spin 1s linear infinite; }
-
-  /* OneDrive setup panel */
-  .onedrive-setup-card {
-    background: rgba(36,113,163,0.08);
-    border: 1px solid rgba(36,113,163,0.4);
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  .onedrive-setup-card .od-title {
-    font-family: var(--display); font-weight: 700; font-size: 14px;
-    letter-spacing: 2px; text-transform: uppercase; color: #5BA4D4; margin-bottom: 4px;
-  }
   .sync-log-entry { font-family: var(--mono); font-size: 10px; color: var(--text-dim); padding: 3px 0; border-bottom: 1px solid rgba(59,74,47,0.15); }
   .sync-log-entry .sl-time { color: var(--text-dim); margin-right: 8px; }
   .sync-log-entry .sl-ok { color: var(--accent-green); }
@@ -263,40 +248,44 @@
   .label-card .lc-sub { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); text-align: center; }
 
   /* Print label sheet */
-  .print-label {
-    display: inline-flex; flex-direction: column; align-items: center;
-    width: 180px; padding: 10px; margin: 4px;
-    border: 1px solid #333; font-family: Arial, sans-serif;
-    background: #fff; color: #000; page-break-inside: avoid;
-    break-inside: avoid;
-  }
-  /* Use img not canvas for print — canvas is replaced with img via toDataURL */
-  .print-label img.pl-qr { width: 120px; height: 120px; display: block; }
-  .print-label .pl-title { font-size: 11px; font-weight: bold; text-align: center; margin-top: 4px; word-break: break-word; }
-  .print-label .pl-sub { font-size: 9px; text-align: center; color: #555; margin-top: 2px; }
-  .print-label .pl-nsn { font-size: 8px; font-family: monospace; color: #333; margin-top: 2px; }
-
-  /* Print-only label sheet — fixed overlay covers entire page */
+  /* ── Print label overlay ────────────────────────────────────────────── */
   #print-label-overlay {
     display: none;
     position: fixed; inset: 0; z-index: 99998;
-    background: #fff;
-    padding: 16px;
+    background: #f0ede8;
     overflow: auto;
   }
-  #print-label-overlay.open { display: block; }
+  #print-label-overlay.open { display: flex; flex-direction: column; }
 
-  #print-label-sheet {
-    display: flex; flex-wrap: wrap; gap: 4px;
+  .plo-toolbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px;
+    background: var(--army-green);
+    border-bottom: 2px solid var(--tan);
+    flex-shrink: 0;
+  }
+  .plo-toolbar span {
+    font-family: var(--display); font-weight: 700; font-size: 14px;
+    letter-spacing: 2px; color: var(--tan); text-transform: uppercase; flex: 1;
   }
 
-  @media print {
-    /* Hide everything except our label overlay */
-    body > * { display: none !important; }
-    #print-label-overlay { display: block !important; position: static !important; overflow: visible !important; }
-    #print-label-sheet { display: flex !important; flex-wrap: wrap; }
-    .print-label { border: 1px solid #333 !important; background: #fff !important; }
-    .print-label img.pl-qr { width: 120px !important; height: 120px !important; }
+  /* The actual rendered label canvas preview */
+  #plo-preview-wrap {
+    flex: 1; overflow: auto; padding: 20px;
+    display: flex; justify-content: center; align-items: flex-start;
+  }
+  #plo-preview-wrap img {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    max-width: 100%;
+    background: #fff;
+  }
+
+  /* progress bar */
+  #plo-progress {
+    width: 100%; height: 3px; background: rgba(255,255,255,0.1);
+  }
+  #plo-progress-bar {
+    height: 100%; background: var(--tan); width: 0%; transition: width 0.15s;
   }
 
   /* Scanner */
@@ -1436,12 +1425,6 @@
         <div class="panel-header">
           <span class="panel-title">Generate QR Labels</span>
           <div class="flex-row" style="gap:8px">
-            <select class="form-select" id="avery-format" style="width:220px;padding:5px 8px;font-size:11px;">
-              <option value="L7160">Avery L7160/5160 — 21 per sheet (63.5×38.1mm)</option>
-              <option value="L7163">Avery L7163/5163 — 14 per sheet (99.1×38.1mm)</option>
-              <option value="L7164">Avery L7164 — 8 per sheet (99.1×67.7mm)</option>
-              <option value="L7166">Avery L7166 — 6 per sheet (99.1×93.1mm)</option>
-            </select>
             <select class="form-select" id="qr-type" style="width:160px;padding:5px 8px;font-size:12px;" onchange="renderQrList()">
               <option value="item">Inventory Items</option>
               <option value="location">Storage Locations</option>
@@ -1451,13 +1434,23 @@
           </div>
         </div>
         <div class="panel-body">
-          <div class="search-bar mb-12">
-            <div class="search-input-wrap" style="flex:1">
+          <div class="flex-row mb-12" style="gap:8px;flex-wrap:wrap;align-items:center;">
+            <div class="search-input-wrap" style="flex:1;min-width:160px">
               <input type="text" id="qr-search" placeholder="Filter list..." oninput="renderQrList()">
             </div>
             <button class="btn btn-secondary btn-sm" onclick="selectAllQr()">Select All</button>
             <button class="btn btn-secondary btn-sm" onclick="clearQrSel()">Clear</button>
-            <button class="btn btn-primary btn-sm" onclick="printSelectedLabels()">⎙ Print Selected</button>
+            <div style="height:20px;border-left:1px solid var(--panel-border);"></div>
+            <select class="form-select" id="label-format" style="width:230px;padding:5px 8px;font-size:11px;" title="Label sheet format">
+              <option value="L7160">Avery L7160/5160 — 21 per A4 (63.5×38.1mm)</option>
+              <option value="L7163">Avery L7163/5163 — 14 per A4 (99.1×38.1mm)</option>
+              <option value="L7164">Avery L7164 — 8 per A4 (99.1×67.7mm)</option>
+              <option value="L7166">Avery L7166 — 6 per A4 (99.1×93.1mm)</option>
+              <option value="A4_4">A4 Plain — 4 per page (2×2 large)</option>
+              <option value="A4_9">A4 Plain — 9 per page (3×3 medium)</option>
+              <option value="A4_1">A4 Plain — 1 per page (full size)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="generateLabelPDF()">⬇ PDF &amp; Print</button>
           </div>
           <div class="label-grid" id="qr-label-grid"></div>
         </div>
@@ -1508,9 +1501,6 @@
   </div>
 
   <!-- Hidden print sheet — only visible during print -->
-  <div id="page-print-labels" style="display:none">
-    <div id="print-label-sheet-legacy"></div>
-  </div>
 </div>
 
 <!-- ====== CSV IMPORT ====== -->
@@ -4089,13 +4079,7 @@ let cameraStream = null;
 let cameraAnimFrame = null;
 
 // ---- Inline minimal QR encoder (Reed-Solomon, version 1-10, byte mode) ----
-// Adapted from qrcode-generator (MIT) — bundled to eliminate CDN dependency.
-const _QR = (() => {
-  // Full QR generation via a tiny self-contained implementation
-  // We load qrcode.js from CDN but with robust multi-fallback.
-  // This flag tracks whether the real lib loaded.
-  return null;
-})();
+
 
 const QR_CDNS = [
   'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
@@ -4227,11 +4211,11 @@ function qrRecords(type) {
 }
 
 function qrRecordLabel(type, r) {
-  if (type === 'item')     return { title: r.name, sub: r.nsn, id: r.id };
-  if (type === 'cadet')    return { title: `${r.rank} ${r.surname}, ${r.given}`, sub: r.svcNo, id: r.svcNo };
-  if (type === 'loan')     return { title: r.itemName, sub: `${r.ref} · ${r.borrowerName}`, id: r.ref };
-  if (type === 'location') return { title: r.loc, sub: 'Storage Location', id: r.id };
-  return { title: '—', sub: '', id: '' };
+  if (type === 'item')     return { title: r.name,  sub: r.nsn,  id: r.id,    type };
+  if (type === 'cadet')    return { title: `${r.rank} ${r.surname}, ${r.given}`, sub: r.svcNo, id: r.svcNo, type };
+  if (type === 'loan')     return { title: r.itemName, sub: `${r.ref} · ${r.borrowerName}`, id: r.ref, type };
+  if (type === 'location') return { title: r.loc,   sub: 'Storage Location', id: r.id, type };
+  return { title: '—', sub: '', id: '', type };
 }
 
 function renderQrList() {
@@ -4282,119 +4266,362 @@ function clearQrSel() {
   document.querySelectorAll('.label-card').forEach(c => c.classList.remove('selected'));
 }
 
-function printSelectedLabels() {
+// =====================================================================
+// LABEL PDF ENGINE
+// Uses jsPDF (loaded on demand) to render QR labels onto A4 canvases,
+// preview page-by-page, download as PDF, and print via browser.
+//
+// Label format definitions (all measurements in mm, A4 = 210×297mm)
+// =====================================================================
+const LABEL_FORMATS = {
+  // Avery formats (A4 base)
+  L7160: { name:'Avery L7160/5160 — 21/sheet', cols:3, rows:7, w:63.5, h:38.1, marginL:7.2, marginT:15.0, gapX:2.5, gapY:0,   qrSize:28, fontSize:6  },
+  L7163: { name:'Avery L7163/5163 — 14/sheet', cols:2, rows:7, w:99.1, h:38.1, marginL:4.7, marginT:15.0, gapX:2.5, gapY:0,   qrSize:30, fontSize:7  },
+  L7164: { name:'Avery L7164 — 8/sheet',       cols:2, rows:4, w:99.1, h:67.7, marginL:4.7, marginT:13.0, gapX:2.5, gapY:0,   qrSize:48, fontSize:7  },
+  L7166: { name:'Avery L7166 — 6/sheet',       cols:2, rows:3, w:99.1, h:93.1, marginL:4.7, marginT:13.0, gapX:2.5, gapY:0,   qrSize:65, fontSize:8  },
+  // Plain A4 layouts
+  A4_4:  { name:'A4 Plain — 4/page (2×2)',     cols:2, rows:2, w:95.0, h:135.0,marginL:10.0,marginT:10.0, gapX:5.0, gapY:7.0, qrSize:70, fontSize:9  },
+  A4_9:  { name:'A4 Plain — 9/page (3×3)',     cols:3, rows:3, w:60.0, h:87.0, marginL:10.0,marginT:10.0, gapX:5.0, gapY:3.0, qrSize:44, fontSize:7  },
+  A4_1:  { name:'A4 Plain — 1/page (full)',    cols:1, rows:1, w:170.0,h:257.0,marginL:20.0,marginT:20.0, gapX:0,   gapY:0,   qrSize:120,fontSize:11 },
+};
+
+// Internal state for the PDF engine
+const PLO = {
+  pages:       [],   // array of data-URL strings (one per A4 page)
+  currentPage: 0,
+  pdfBlob:     null,
+};
+
+// Main entry point — called by "PDF & Print" button
+function generateLabelPDF() {
   const type = document.getElementById('qr-type').value;
   if (!qrSelectedIds.size) { toast('Select at least one label to print.', 'warn'); return; }
 
+  const fmtKey = document.getElementById('label-format').value;
+  const fmt    = LABEL_FORMATS[fmtKey];
+  if (!fmt) { toast('Unknown label format.', 'err'); return; }
+
   loadQrLib(() => {
     const records = qrRecords(type).filter(r => qrSelectedIds.has(qrRecordLabel(type, r).id));
-    if (!records.length) { toast('No matching records to print.', 'warn'); return; }
+    if (!records.length) { toast('No matching records to generate.', 'warn'); return; }
 
-    const sheet = document.getElementById('print-label-sheet');
-    sheet.innerHTML = '<div style="font-family:Arial;font-size:12px;color:#666;padding:16px;">Generating labels…</div>';
+    // Show overlay with progress bar
+    document.getElementById('print-label-overlay').classList.add('open');
+    document.getElementById('plo-preview-img').src = '';
+    document.getElementById('plo-progress-bar').style.width = '0%';
+    document.getElementById('plo-page-info').textContent = 'Rendering QR codes…';
 
-    // Build all QR codes as off-screen canvases first, then convert to img data URLs
-    // This avoids the canvas-not-printing problem in all browsers.
-    const total = records.length;
+    // Step 1: render all QR codes to PNG data URLs (off-screen)
+    const total   = records.length;
     let completed = 0;
-    const results = new Array(total); // preserve order
+    const qrDataUrls = new Array(total);
+
+    // Use 4× DPI for crisp QR codes — render large, embed scaled
+    const QR_RENDER_SIZE = 400;
 
     records.forEach((r, idx) => {
-      const lbl  = qrRecordLabel(type, r);
       const data = qrPayload(type, r);
-
-      // Render to a temporary off-screen canvas
       const offCanvas = document.createElement('canvas');
-      offCanvas.width  = 120;
-      offCanvas.height = 120;
+      offCanvas.width  = QR_RENDER_SIZE;
+      offCanvas.height = QR_RENDER_SIZE;
 
-      _renderQRtoCanvas(offCanvas, data, 120, '#000000', '#ffffff', (err) => {
-        if (err) {
-          console.error('QR render error for', lbl.title, err);
-          results[idx] = null;
-        } else {
-          // Convert canvas → base64 PNG data URL immediately after render
-          try {
-            results[idx] = offCanvas.toDataURL('image/png');
-          } catch(e) {
-            console.error('toDataURL failed', e);
-            results[idx] = null;
-          }
-        }
-
+      _renderQRtoCanvas(offCanvas, data, QR_RENDER_SIZE, '#000000', '#ffffff', (err) => {
+        qrDataUrls[idx] = err ? null : offCanvas.toDataURL('image/png');
         completed++;
-        if (completed === total) {
-          // All QR codes rendered — now build the HTML sheet
-          _buildPrintSheet(sheet, type, records, results);
-        }
+        document.getElementById('plo-progress-bar').style.width =
+          Math.round((completed / total) * 50) + '%';
+        if (completed === total) _buildPDF(type, fmt, records, qrDataUrls);
       });
     });
   });
 }
 
-function _buildPrintSheet(sheet, type, records, dataUrls) {
-  const today = new Date().toLocaleDateString('en-AU');
-  sheet.innerHTML = '';
+// Step 2: composite all labels onto A4 canvases, then render PDF
+function _buildPDF(type, fmt, records, qrDataUrls) {
+  document.getElementById('plo-page-info').textContent = 'Compositing labels…';
 
-  records.forEach((r, idx) => {
-    const lbl     = qrRecordLabel(type, r);
-    const dataUrl = dataUrls[idx];
+  const labelsPerPage = fmt.cols * fmt.rows;
+  const totalPages    = Math.ceil(records.length / labelsPerPage);
 
-    const wrap = document.createElement('div');
-    wrap.className = 'print-label';
+  // A4 at 96 DPI screen — but we render at 3× for quality
+  // 210mm × 297mm at 3.78px/mm = 793.8 × 1122.5px — use 4px/mm for clean numbers
+  const PX_PER_MM = 4;
+  const PAGE_W    = Math.round(210 * PX_PER_MM);  // 840px
+  const PAGE_H    = Math.round(297 * PX_PER_MM);  // 1188px
 
-    if (dataUrl) {
-      const img    = document.createElement('img');
-      img.className = 'pl-qr';
-      img.src       = dataUrl;
-      img.alt       = 'QR code for ' + lbl.title;
-      // Ensure image is loaded before print (should already be since it's a data URL)
-      wrap.appendChild(img);
-    } else {
-      // Fallback: show error placeholder
-      const errDiv = document.createElement('div');
-      errDiv.style.cssText = 'width:120px;height:120px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;text-align:center;';
-      errDiv.textContent = 'QR Error';
-      wrap.appendChild(errDiv);
+  PLO.pages       = [];
+  PLO.currentPage = 0;
+  PLO.pdfBlob     = null;
+
+  let pagesDone = 0;
+
+  for (let p = 0; p < totalPages; p++) {
+    const canvas = document.createElement('canvas');
+    canvas.width  = PAGE_W;
+    canvas.height = PAGE_H;
+    const ctx = canvas.getContext('2d');
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+
+    // Draw each label cell on this page
+    for (let cell = 0; cell < labelsPerPage; cell++) {
+      const recIdx = p * labelsPerPage + cell;
+      if (recIdx >= records.length) break;
+
+      const r   = records[recIdx];
+      const lbl = qrRecordLabel(type, r);
+      const col = cell % fmt.cols;
+      const row = Math.floor(cell / fmt.cols);
+
+      // Top-left of this label cell in px
+      const cellX = Math.round((fmt.marginL + col * (fmt.w + fmt.gapX)) * PX_PER_MM);
+      const cellY = Math.round((fmt.marginT + row * (fmt.h + fmt.gapY)) * PX_PER_MM);
+      const cellW = Math.round(fmt.w * PX_PER_MM);
+      const cellH = Math.round(fmt.h * PX_PER_MM);
+
+      _drawLabelCell(ctx, cellX, cellY, cellW, cellH, lbl, qrDataUrls[recIdx], fmt, PX_PER_MM);
     }
 
-    const t = document.createElement('div'); t.className = 'pl-title'; t.textContent = lbl.title;
-    const s = document.createElement('div'); s.className = 'pl-sub';   s.textContent = lbl.sub;
-    const n = document.createElement('div'); n.className = 'pl-nsn';
-    n.textContent = type.toUpperCase() + '  ·  ' + today;
+    // Thin grid lines on Avery formats (helps alignment at print time)
+    if (!fmt.name.includes('Plain')) {
+      ctx.strokeStyle = '#eeeeee';
+      ctx.lineWidth   = 0.5;
+      for (let col = 0; col < fmt.cols; col++) {
+        for (let row = 0; row < fmt.rows; row++) {
+          const cx = Math.round((fmt.marginL + col * (fmt.w + fmt.gapX)) * PX_PER_MM);
+          const cy = Math.round((fmt.marginT + row * (fmt.h + fmt.gapY)) * PX_PER_MM);
+          const cw = Math.round(fmt.w * PX_PER_MM);
+          const ch = Math.round(fmt.h * PX_PER_MM);
+          ctx.strokeRect(cx + 0.5, cy + 0.5, cw - 1, ch - 1);
+        }
+      }
+    }
 
-    wrap.append(t, s, n);
-    sheet.appendChild(wrap);
+    PLO.pages.push(canvas.toDataURL('image/png'));
+    pagesDone++;
+    document.getElementById('plo-progress-bar').style.width =
+      Math.round(50 + (pagesDone / totalPages) * 45) + '%';
+  }
+
+  document.getElementById('plo-progress-bar').style.width = '100%';
+
+  // Build page-jump selector
+  const sel = document.getElementById('plo-page-select');
+  sel.innerHTML = PLO.pages.map((_, i) =>
+    `<option value="${i}">Pg ${i+1}</option>`).join('');
+  sel.onchange = () => ploGoToPage(parseInt(sel.value));
+
+  // Show first page
+  ploGoToPage(0);
+  document.getElementById('plo-progress-bar').style.width = '0%';
+}
+
+// Draw a single label cell onto the canvas context
+function _drawLabelCell(ctx, x, y, w, h, lbl, qrDataUrl, fmt, PX_PER_MM) {
+  const qrPx     = Math.round(fmt.qrSize * PX_PER_MM);
+  const pad      = Math.round(2 * PX_PER_MM);
+  const fontSize = Math.round(fmt.fontSize * PX_PER_MM);
+
+  // QR code — left-aligned with padding
+  if (qrDataUrl) {
+    const img = new Image();
+    img.src = qrDataUrl;
+    // Draw immediately (data URL is already loaded)
+    const qrY = y + Math.round((h - qrPx) / 2);  // vertically centred
+    ctx.drawImage(img, x + pad, qrY, qrPx, qrPx);
+  } else {
+    // Error placeholder
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(x + pad, y + pad, qrPx, qrPx);
+    ctx.fillStyle = '#999';
+    ctx.font = `${Math.round(fontSize * 0.8)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('QR ERR', x + pad + qrPx / 2, y + pad + qrPx / 2);
+  }
+
+  // Text block — right of QR code
+  const textX   = x + pad + qrPx + pad;
+  const textW   = w - pad - qrPx - pad * 2;
+  const centerY = y + h / 2;
+
+  ctx.fillStyle   = '#000000';
+  ctx.textAlign   = 'left';
+  ctx.textBaseline = 'middle';
+
+  // Title (bold, wrapped)
+  const titleFontSz = fontSize;
+  ctx.font = `bold ${titleFontSz}px Arial`;
+  const titleLines = _wrapText(ctx, lbl.title, textW);
+  const lineH      = titleFontSz * 1.25;
+  const totalTextH = titleLines.length * lineH + (lbl.sub ? lineH * 0.9 : 0) + (lbl.extra ? lineH * 0.8 : 0);
+  let   ty         = centerY - totalTextH / 2 + lineH / 2;
+
+  titleLines.forEach(line => {
+    ctx.fillText(line, textX, ty, textW);
+    ty += lineH;
   });
 
-  // Show the overlay
-  document.getElementById('print-label-overlay').classList.add('open');
+  // Sub line (NSN / service number)
+  if (lbl.sub) {
+    ctx.font      = `${Math.round(fontSize * 0.85)}px 'Courier New', monospace`;
+    ctx.fillStyle = '#333333';
+    ctx.fillText(lbl.sub, textX, ty, textW);
+    ty += lineH * 0.9;
+  }
 
-  // Wait for all img data URLs to be "painted" then trigger print
-  // requestAnimationFrame ensures the browser has rendered the images
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.print();
-    });
+  // Type + date stamp
+  const today = new Date().toLocaleDateString('en-AU');
+  ctx.font      = `${Math.round(fontSize * 0.75)}px Arial`;
+  ctx.fillStyle = '#888888';
+  ctx.fillText(lbl.type ? lbl.type.toUpperCase() + '  ' + today : today, textX, ty, textW);
+}
+
+// Simple word-wrap for canvas text
+function _wrapText(ctx, text, maxWidth) {
+  if (!text) return [''];
+  const words = text.split(' ');
+  const lines  = [];
+  let   line   = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [text];
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function ploGoToPage(idx) {
+  if (idx < 0 || idx >= PLO.pages.length) return;
+  PLO.currentPage = idx;
+  const img = document.getElementById('plo-preview-img');
+  img.src = PLO.pages[idx];
+  document.getElementById('plo-page-info').textContent =
+    `Page ${idx + 1} of ${PLO.pages.length}`;
+  const sel = document.getElementById('plo-page-select');
+  if (sel) sel.value = idx;
+}
+function ploPrevPage() { ploGoToPage(PLO.currentPage - 1); }
+function ploNextPage() { ploGoToPage(PLO.currentPage + 1); }
+
+// ── Download PDF ────────────────────────────────────────────────────────────
+// Uses jsPDF: each page image is embedded at A4 size.
+// jsPDF is loaded on demand — no CDN needed at startup.
+const JSPDF_CDNS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
+];
+
+function _loadJsPDF(cb) {
+  if (window.jspdf) { cb(); return; }
+  if (window._jspdfCbs) { window._jspdfCbs.push(cb); return; }
+  window._jspdfCbs = [cb];
+  _loadScript(JSPDF_CDNS, 0,
+    () => { const cbs = window._jspdfCbs||[]; window._jspdfCbs = null; cbs.forEach(f=>f()); },
+    () => { window._jspdfCbs = null; toast('jsPDF library failed to load from all CDNs.', 'err'); }
+  );
+}
+
+function ploDownloadPDF() {
+  if (!PLO.pages.length) { toast('No pages to export.', 'warn'); return; }
+  document.getElementById('plo-page-info').textContent = 'Building PDF…';
+
+  _loadJsPDF(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const W = 210, H = 297;
+
+      PLO.pages.forEach((dataUrl, i) => {
+        if (i > 0) doc.addPage();
+        doc.addImage(dataUrl, 'PNG', 0, 0, W, H, '', 'FAST');
+      });
+
+      const fmtKey = document.getElementById('label-format').value;
+      const fmt    = LABEL_FORMATS[fmtKey] || {};
+      const unitCode = (typeof state !== 'undefined' && state.settings?.unitCode) || 'QStore';
+      const today  = new Date().toISOString().slice(0,10);
+      const fname  = `${unitCode}_Labels_${fmtKey}_${today}.pdf`;
+
+      doc.save(fname);
+      document.getElementById('plo-page-info').textContent =
+        `Page ${PLO.currentPage+1} of ${PLO.pages.length}`;
+      toast(`PDF saved: ${fname}`);
+    } catch(e) {
+      console.error('PDF build error:', e);
+      toast('PDF generation failed: ' + e.message, 'err');
+      document.getElementById('plo-page-info').textContent = 'PDF error — see console';
+    }
   });
 }
 
+// ── Print via browser ───────────────────────────────────────────────────────
+// Creates a minimal print-only window with all page images — reliable cross-browser.
+function ploPrint() {
+  if (!PLO.pages.length) { toast('No pages to print.', 'warn'); return; }
+
+  const imgs = PLO.pages.map(src =>
+    `<img src="${src}" style="width:210mm;height:297mm;display:block;page-break-after:always;">`
+  ).join('');
+
+  const win = window.open('', '_blank',
+    'width=900,height=700,menubar=yes,toolbar=yes,location=no,status=no');
+  if (!win) { toast('Popup blocked — allow popups for this page to print.', 'err'); return; }
+
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>Q-Store Labels</title>
+    <style>
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { background:#fff; }
+      img { display:block; }
+      @page { size:A4 portrait; margin:0; }
+      @media print {
+        body { background:#fff !important; }
+        img { width:210mm !important; height:297mm !important; page-break-after:always; break-after:page; }
+      }
+    </style>
+  </head><body>${imgs}</body></html>`);
+  win.document.close();
+
+  // Wait for all images to load before printing
+  const images = win.document.getElementsByTagName('img');
+  let loaded = 0;
+  const tryPrint = () => {
+    loaded++;
+    if (loaded >= images.length) {
+      win.focus();
+      win.print();
+      // Don't close — let user dismiss print dialog
+    }
+  };
+  Array.from(images).forEach(img => {
+    if (img.complete) tryPrint();
+    else { img.onload = tryPrint; img.onerror = tryPrint; }
+  });
+  if (images.length === 0) { win.focus(); win.print(); }
+}
+
+// ── Close overlay ────────────────────────────────────────────────────────────
 function closePrintOverlay() {
   document.getElementById('print-label-overlay').classList.remove('open');
-  document.getElementById('print-label-sheet').innerHTML = '';
+  PLO.pages = [];
+  PLO.currentPage = 0;
+  PLO.pdfBlob = null;
+  document.getElementById('plo-preview-img').src = '';
+  document.getElementById('plo-progress-bar').style.width = '0%';
 }
 
-// =====================================================================
-// QR SCANNER — camera (jsQR) + USB keyboard wedge
-// =====================================================================
-function loadJsQr(cb) {
-  if (window.jsQR) { cb(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
-  s.onload = cb;
-  s.onerror = () => toast('Scanner library failed to load.', 'err');
-  document.head.appendChild(s);
-}
+// Legacy shim — printSelectedLabels still wired to old button, redirect to new engine
+function printSelectedLabels() { generateLabelPDF(); }
+
 
 async function startCamera() {
   loadJsQr(async () => {
@@ -4750,18 +4977,22 @@ function runImport() {
 }
 </script>
 
-<!-- ====== PRINT LABEL OVERLAY — img tags for reliable cross-browser printing ====== -->
+<!-- ====== PRINT LABEL OVERLAY ====== -->
 <div id="print-label-overlay">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #C4A96B" class="no-print">
-    <span style="font-family:Arial;font-size:14px;font-weight:bold;color:#3B4A2F;">
-      Q-Store IMS — Label Print Sheet
-    </span>
-    <div style="display:flex;gap:8px">
-      <button onclick="window.print()" style="padding:7px 18px;background:#3B4A2F;color:#C4A96B;border:1px solid #C4A96B;font-family:Arial;font-size:12px;cursor:pointer;font-weight:bold;letter-spacing:1px;">⎙ PRINT</button>
-      <button onclick="closePrintOverlay()" style="padding:7px 14px;background:transparent;color:#666;border:1px solid #ccc;font-family:Arial;font-size:12px;cursor:pointer;">✕ Close</button>
-    </div>
+  <div class="plo-toolbar">
+    <span>Q-Store IMS — Label Sheet Preview</span>
+    <select id="plo-page-select" class="form-select" style="width:60px;padding:4px 6px;font-size:11px;" title="Jump to page"></select>
+    <span id="plo-page-info" style="font-family:var(--mono);font-size:10px;color:var(--text-secondary);flex:0"></span>
+    <button onclick="ploPrevPage()" class="btn btn-secondary btn-sm">◀</button>
+    <button onclick="ploNextPage()" class="btn btn-secondary btn-sm">▶</button>
+    <button onclick="ploDownloadPDF()" class="btn btn-primary btn-sm">⬇ Download PDF</button>
+    <button onclick="ploPrint()" class="btn btn-amber btn-sm">⎙ Print</button>
+    <button onclick="closePrintOverlay()" class="btn btn-secondary btn-sm">✕ Close</button>
   </div>
-  <div id="print-label-sheet"></div>
+  <div id="plo-progress"><div id="plo-progress-bar"></div></div>
+  <div id="plo-preview-wrap">
+    <img id="plo-preview-img" src="" alt="Label preview">
+  </div>
 </div>
 
 <div id="toast-container"></div>
