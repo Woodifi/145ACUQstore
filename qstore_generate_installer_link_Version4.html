@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q-Store IMS — Installation Link Generator</title>
+  <style>
+    :root {
+      --army-green: #3B4A2F;
+      --olive: #4A5C35;
+      --tan: #C4A96B;
+      --dark-bg: #1A1F14;
+      --panel-bg: #232B1A;
+      --panel-border: #3B4A2F;
+      --text-primary: #E8E0CC;
+      --text-secondary: #9A9A80;
+      --text-dim: #5A5A48;
+      --accent-amber: #D4930A;
+      --accent-red: #C0392B;
+      --accent-green: #27AE60;
+      --accent-blue: #2471A3;
+      --mono: 'Share Tech Mono', monospace;
+      --display: 'Barlow Condensed', sans-serif;
+      --body: 'Barlow', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: var(--body);
+      font-size: 14px;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    header {
+      background: var(--army-green);
+      border: 1px solid var(--tan);
+      border-bottom: 3px solid var(--tan);
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--tan);
+      letter-spacing: 1px;
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      margin-bottom: 20px;
+      padding: 24px;
+    }
+
+    .panel-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--tan);
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    textarea, input {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--panel-border);
+      border-radius: 2px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--tan);
+      background: rgba(0,0,0,0.4);
+    }
+
+    textarea {
+      min-height: 200px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      border: none;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .btn-primary {
+      background: var(--army-green);
+      color: var(--tan);
+      border: 1px solid var(--tan);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--olive);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--panel-border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--text-secondary);
+      color: var(--text-primary);
+    }
+
+    .alert-box {
+      padding: 14px;
+      border-left: 3px solid;
+      margin-bottom: 16px;
+      border-radius: 2px;
+      font-size: 12px;
+    }
+
+    .alert-box.success {
+      border-color: var(--accent-green);
+      background: rgba(39,174,96,0.1);
+      color: #7FD9A8;
+    }
+
+    .alert-box.error {
+      border-color: var(--accent-red);
+      background: rgba(192,57,43,0.1);
+      color: #E8A89A;
+    }
+
+    .alert-box.info {
+      border-color: var(--accent-blue);
+      background: rgba(36,113,163,0.1);
+      color: #7AB8E8;
+    }
+
+    .result-section {
+      display: none;
+    }
+
+    .result-section.visible {
+      display: block;
+    }
+
+    .link-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--tan);
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 2px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent-green);
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      background: rgba(39,174,96,0.2);
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+      padding: 8px 16px;
+      font-size: 11px;
+      margin-top: 10px;
+      width: auto;
+    }
+
+    .copy-btn:hover {
+      background: rgba(39,174,96,0.35);
+    }
+
+    .info-box {
+      background: rgba(36,113,163,0.1);
+      border: 1px solid var(--accent-blue);
+      padding: 14px;
+      border-radius: 2px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .steps {
+      list-style: none;
+      counter-reset: step-counter;
+    }
+
+    .steps li {
+      counter-increment: step-counter;
+      margin-bottom: 16px;
+      padding-left: 32px;
+      position: relative;
+    }
+
+    .steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      background: rgba(196,169,107,0.2);
+      border: 1px solid var(--tan);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-weight: bold;
+      color: var(--tan);
+      font-size: 12px;
+    }
+
+    .download-btn {
+      background: rgba(39,174,96,0.2);
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+      padding: 12px 24px;
+      font-size: 11px;
+      margin-top: 10px;
+      width: auto;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .download-btn:hover {
+      background: rgba(39,174,96,0.35);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        min-width: auto;
+      }
+
+      h1 {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Q-Store IMS</h1>
+    <div class="subtitle">Installation Backup Generator v3.0</div>
+  </header>
+
+  <!-- Instructions -->
+  <div class="panel">
+    <div class="panel-title">📋 How to Use</div>
+    <ol class="steps">
+      <li><strong>Export your backup:</strong> Open the Q-Store app, go to Settings (CO/OC only), click "Export Local (JSON)", and save the file.</li>
+      <li><strong>Copy the JSON:</strong> Open the exported file with a text editor, select all the text, and copy it.</li>
+      <li><strong>Paste it below:</strong> Paste the JSON into the text area below.</li>
+      <li><strong>Generate file:</strong> Click "Generate Installation File".</li>
+      <li><strong>Share the file:</strong> Send the downloaded `.qstore` file to your team members via email or file sharing.</li>
+      <li><strong>Users install:</strong> Users save the file and drag it onto the Q-Store app to install.</li>
+    </ol>
+  </div>
+
+  <!-- Input Section -->
+  <div class="panel">
+    <div class="panel-title">1️⃣ Paste Your Exported Backup</div>
+    
+    <label for="backup-json">Backup JSON Data</label>
+    <textarea id="backup-json" placeholder="Paste your exported Q-Store backup JSON here..."></textarea>
+
+    <div class="info-box">
+      ⚠️ <strong>Security Notice:</strong> This data contains all your user accounts, inventory, and settings. Only paste it here if you're on a secure, private device.
+    </div>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="generateFile()">📥 Generate Installation File</button>
+      <button class="btn-secondary" onclick="clearForm()">Clear</button>
+    </div>
+
+    <div id="messages"></div>
+  </div>
+
+  <!-- Result Section -->
+  <div class="panel result-section" id="result-section">
+    <div class="panel-title">2️⃣ Your Installation File is Ready</div>
+
+    <div class="alert-box success" id="success-message"></div>
+
+    <div class="info-box">
+      <strong>How to share with your team:</strong><br>
+      1. The file <strong>qstore_installation.qstore</strong> has been downloaded<br>
+      2. Send it to your team via email or file sharing (Teams, OneDrive, etc.)<br>
+      3. Users can save the file to their computer<br>
+      4. Users open the Q-Store app and drag the file onto the login screen to install
+    </div>
+
+    <button class="btn-primary" onclick="startOver()" style="width: auto; margin-top: 20px;">← Generate Another File</button>
+  </div>
+</div>
+
+<script>
+function generateFile() {
+  const backupJson = document.getElementById('backup-json').value.trim();
+  const messagesDiv = document.getElementById('messages');
+  messagesDiv.innerHTML = '';
+
+  if (!backupJson) {
+    showMessage('Please paste your backup JSON data first.', 'error');
+    return;
+  }
+
+  try {
+    // Validate JSON
+    JSON.parse(backupJson);
+    
+    // Create a blob with the backup data
+    const blob = new Blob([backupJson], { type: 'application/json' });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'qstore_installation_' + new Date().toISOString().split('T')[0] + '.qstore';
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    // Show success
+    document.getElementById('result-section').classList.add('visible');
+    document.getElementById('success-message').innerHTML = 
+      `✅ <strong>Installation file downloaded successfully!</strong><br>` +
+      `File: qstore_installation_${new Date().toISOString().split('T')[0]}.qstore<br>` +
+      `Backup size: ${(backupJson.length / 1024).toFixed(1)} KB<br>` +
+      `Ready to share with your team!`;
+    
+  } catch (e) {
+    showMessage('Invalid JSON format. Please check your backup file and try again. Error: ' + e.message, 'error');
+  }
+}
+
+function showMessage(text, type) {
+  const messagesDiv = document.getElementById('messages');
+  messagesDiv.innerHTML = `<div class="alert-box ${type}">${text}</div>`;
+}
+
+function clearForm() {
+  document.getElementById('backup-json').value = '';
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('result-section').classList.remove('visible');
+}
+
+function startOver() {
+  clearForm();
+  document.getElementById('backup-json').focus();
+}
+</script>
+
+</body>
+</html>
