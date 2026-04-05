@@ -965,6 +965,10 @@
   <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:16px;letter-spacing:1px;">
     IMS v3.2 · OFFICIAL USE ONLY · ALL ACCESS LOGGED
   </div>
+<!-- Add this BEFORE the closing </div> of login-screen, around line 963 -->
+<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:24px;letter-spacing:1px;text-align:center;">
+  💡 Tip: You can also drag & drop a .qstore installation file here to restore data
+</div>
 </div>
 
 <main>
@@ -4974,6 +4978,75 @@ function runImport() {
     <strong style="color:var(--text-secondary)">${skipped} skipped</strong></div>
     <div class="mt-12"><button class="btn btn-secondary btn-sm" onclick="resetImport()">Import Another File</button></div>`;
   toast('Import complete: ' + added + ' added, ' + updated + ' updated.');
+}
+// ===== DRAG & DROP INSTALLATION =====
+const loginScreen = document.getElementById('login-screen');
+
+if (loginScreen) {
+  loginScreen.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    loginScreen.style.opacity = '0.7';
+    loginScreen.style.border = '3px dashed var(--tan)';
+  });
+
+  loginScreen.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    loginScreen.style.opacity = '1';
+    loginScreen.style.border = 'none';
+  });
+
+  loginScreen.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    loginScreen.style.opacity = '1';
+    loginScreen.style.border = 'none';
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      
+      if (file.name.endsWith('.qstore') || file.type === 'application/json') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const backupData = JSON.parse(event.target.result);
+            
+            // Restore data
+            if (backupData.users) {
+              localStorage.setItem('qstore_users', JSON.stringify(backupData.users));
+            }
+            if (backupData.inventory) {
+              localStorage.setItem('qstore_inventory', JSON.stringify(backupData.inventory));
+            }
+            if (backupData.cadets) {
+              localStorage.setItem('qstore_cadets', JSON.stringify(backupData.cadets));
+            }
+            if (backupData.loans) {
+              localStorage.setItem('qstore_loans', JSON.stringify(backupData.loans));
+            }
+            if (backupData.settings) {
+              localStorage.setItem('qstore_settings', JSON.stringify(backupData.settings));
+            }
+            if (backupData.auditLog) {
+              localStorage.setItem('qstore_auditLog', JSON.stringify(backupData.auditLog));
+            }
+            
+            // Show success and refresh
+            alert('✅ Installation complete! Refreshing app...');
+            location.reload();
+            
+          } catch (error) {
+            alert('❌ Invalid installation file. Please check the file and try again.');
+          }
+        };
+        reader.readAsText(file);
+      } else {
+        alert('❌ Please drop a .qstore or .json file');
+      }
+    }
+  });
 }
 </script>
 
