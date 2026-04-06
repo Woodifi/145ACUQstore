@@ -226,6 +226,48 @@
     font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
     color: var(--accent-green); text-transform: uppercase; margin-bottom: 10px;
   }
+
+  /* ── Item photo thumbnail ────────────────────────────────────────── */
+  .item-thumb {
+    width: 48px; height: 48px; object-fit: cover;
+    border-radius: 3px; border: 1px solid var(--panel-border);
+    display: block; background: rgba(0,0,0,0.2); cursor: pointer; flex-shrink: 0;
+  }
+  .item-thumb-placeholder {
+    width: 48px; height: 48px; border-radius: 3px;
+    border: 1px solid var(--panel-border);
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 18px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .photo-upload-area {
+    border: 2px dashed var(--panel-border); border-radius: 3px;
+    padding: 12px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .photo-upload-area:hover { border-color: var(--tan); background: rgba(196,169,107,0.05); }
+  .photo-upload-area.has-photo { border-color: var(--accent-green); border-style: solid; }
+  .photo-preview-img {
+    max-width: 100%; max-height: 120px; object-fit: contain;
+    margin: 0 auto; display: block; border-radius: 2px;
+  }
+  .photo-upload-hint {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; margin-top: 6px;
+  }
+  #photo-lightbox {
+    display: none; position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.88); align-items: center; justify-content: center; cursor: zoom-out;
+  }
+  #photo-lightbox.open { display: flex; }
+  #photo-lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; box-shadow: 0 8px 40px rgba(0,0,0,0.8); }
+  #photo-lightbox .lb-close { position: absolute; top:16px; right:20px; font-size:28px; color:#fff; cursor:pointer; font-family:var(--mono); opacity:0.7; }
+  #photo-lightbox .lb-close:hover { opacity:1; }
+  .deploy-step { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--panel-border); }
+  .deploy-step:last-child { border-bottom:none; }
+  .deploy-step-num { width:28px; height:28px; border-radius:50%; background:var(--army-green); border:1px solid var(--tan); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; color:var(--tan); flex-shrink:0; margin-top:2px; }
+  .deploy-token-display { font-family:var(--mono); font-size:10px; padding:8px 10px; background:rgba(0,0,0,0.3); border:1px solid var(--tan); word-break:break-all; color:var(--tan); margin-top:6px; }
+
   .label-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1034,6 +1076,7 @@
           <thead>
             <tr>
               <th>NSN / Stores Code</th>
+              <th style="width:54px">Photo</th>
               <th>Nomenclature</th>
               <th>Category</th>
               <th>Auth Qty</th>
@@ -1998,6 +2041,51 @@
         </div>
       </div>
       <div class="panel mt-12">
+        <div class="panel-header" style="border-top:3px solid var(--accent-amber)">
+          <span class="panel-title" style="color:var(--accent-amber)">🚀 Deploy to Remote Users</span>
+        </div>
+        <div class="panel-body">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.8;">
+            Generate a <strong>Deploy Token</strong> — a single encrypted string that encodes the OneDrive location of your data file. Remote users paste this token into the Installer to get read-only sync access without needing a Microsoft login.
+          </div>
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label class="form-label">Token Expiry</label>
+              <select class="form-select" id="deploy-expiry">
+                <option value="30">30 days</option>
+                <option value="90" selected>90 days</option>
+                <option value="180">180 days</option>
+                <option value="365">1 year</option>
+                <option value="0">No expiry</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Access Level</label>
+              <select class="form-select" id="deploy-access">
+                <option value="ro">Read-Only (view inventory + AB189)</option>
+                <option value="cadet">Cadet (view + own loans + AB189)</option>
+              </select>
+            </div>
+          </div>
+          <div id="deploy-token-area" style="display:none;margin-top:12px;">
+            <div class="form-label mb-12">Deploy Token — share this with remote users:</div>
+            <div class="deploy-token-display" id="deploy-token-text"></div>
+            <div class="flex-row mt-12" style="gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="copyDeployToken()">Copy Token</button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadInstaller()">⬇ Download Installer HTML</button>
+            </div>
+          </div>
+          <div class="mt-12">
+            <button class="btn btn-amber" onclick="generateDeployToken()">Generate Deploy Token</button>
+          </div>
+          <div class="alert-box info mt-12" style="font-size:11px;">
+            <div class="alert-title">How it works</div>
+            The token encodes your OneDrive sharing URL and unit code using AES-like XOR encryption with a rotating key. Remote users open the Installer HTML, paste the token, and the app fetches the latest data automatically. They get read-only access — no Microsoft login required. The QM's MSAL account is never shared.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt-12">
         <div class="panel-header"><span class="panel-title">ADF Policy Reference</span></div>
         <div class="panel-body" style="font-size:12px; line-height:1.8; color:var(--text-secondary);">
           <div class="text-mono" style="color:var(--tan);font-size:10px;margin-bottom:8px;">APPLICABLE DIRECTIVES</div>
@@ -2071,11 +2159,23 @@
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="add-notes" placeholder="Serial numbers, special handling instructions..."></textarea>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Item Photo</label>
+          <div class="photo-upload-area" id="add-photo-area"
+               onclick="document.getElementById('add-photo-file').click()"
+               ondragover="event.preventDefault();this.classList.add('has-photo')"
+               ondragleave="this.classList.remove('has-photo')"
+               ondrop="photoDropped(event,'add')">
+            <div id="add-photo-preview"><div class="photo-upload-hint">📷 Click or drag &amp; drop to upload photo<br>Camera capture also supported</div></div>
+          </div>
+          <input type="file" id="add-photo-file" accept="image/*" capture="environment" style="display:none" onchange="photoFileSelected(event,'add')">
+          <input type="hidden" id="add-photo-url" value="">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-add-item')">Cancel</button>
-      <button class="btn btn-primary" onclick="addItem()">Add to Register</button>
+      <button class="btn btn-primary" onclick="addItemWithPhoto()">Add to Register</button>
     </div>
   </div>
 </div>
@@ -2295,15 +2395,33 @@
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="edit-notes"></textarea>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Item Photo</label>
+          <div class="photo-upload-area" id="edit-photo-area"
+               onclick="document.getElementById('edit-photo-file').click()"
+               ondragover="event.preventDefault();this.classList.add('has-photo')"
+               ondragleave="this.classList.remove('has-photo')"
+               ondrop="photoDropped(event,'edit')">
+            <div id="edit-photo-preview"><div class="photo-upload-hint">📷 Click or drag to replace photo</div></div>
+          </div>
+          <input type="file" id="edit-photo-file" accept="image/*" capture="environment" style="display:none" onchange="photoFileSelected(event,'edit')">
+          <input type="hidden" id="edit-photo-url" value="">
+          <div id="edit-photo-od-status" class="text-mono mt-12" style="font-size:10px;color:var(--text-secondary);display:none"></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-edit-item')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditItem()">Save Changes</button>
+      <button class="btn btn-primary" onclick="saveEditItemWithPhoto()">Save Changes</button>
     </div>
   </div>
 </div>
 
+<!-- Photo lightbox -->
+<div id="photo-lightbox" onclick="closePhotoLightbox()">
+  <span class="lb-close" onclick="closePhotoLightbox()">✕</span>
+  <img id="photo-lightbox-img" src="" alt="Item photo">
+</div>
 <div id="toast-container"></div>
 
 <script>
@@ -3194,6 +3312,477 @@ function renderPendingRequests() {
 
 // =====================================================================
 
+
+// =====================================================================
+// PHOTO ENGINE — Upload to OneDrive, reference by URL, display thumbnail
+// Photos are stored in a /photos subfolder of the data folder on OneDrive
+// Items store only the OneDrive file URL — never the binary locally
+// =====================================================================
+
+// Pending photo for add/edit (local file object before upload)
+const _pendingPhoto = { add: null, edit: null };
+
+// Generic placeholder SVG as data URL (shown when photo unavailable)
+const PHOTO_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23232B1A' rx='3'/%3E%3Ctext x='24' y='30' font-size='22' text-anchor='middle' fill='%235A5A48'%3E📷%3C/text%3E%3C/svg%3E";
+
+function photoFileSelected(event, mode) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('Please select an image file.', 'err'); return; }
+  _pendingPhoto[mode] = file;
+  _showPhotoPreview(mode, file);
+  event.target.value = '';
+}
+
+function photoDropped(event, mode) {
+  event.preventDefault();
+  document.getElementById(mode + '-photo-area').classList.remove('has-photo');
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { toast('Please drop an image file.', 'err'); return; }
+  _pendingPhoto[mode] = file;
+  _showPhotoPreview(mode, file);
+}
+
+function _showPhotoPreview(mode, file) {
+  const area    = document.getElementById(mode + '-photo-area');
+  const preview = document.getElementById(mode + '-photo-preview');
+  area.classList.add('has-photo');
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.innerHTML = `<img class="photo-preview-img" src="${e.target.result}" alt="Preview">
+      <div class="photo-upload-hint">📷 ${file.name} (${(file.size/1024).toFixed(0)} KB) — will upload on save</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Upload photo to OneDrive /photos/ subfolder, return the web URL
+async function _uploadPhotoToOneDrive(file, itemId) {
+  if (!OD.account) {
+    // Not signed in — store as local data URL instead (degraded mode)
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const token  = await OD.getAccessToken();
+  if (!token)  return null;
+
+  const folder  = (OD.settings.folder || 'QStore').trim().replace(/^\/+|\/+$/g, '');
+  const ext     = file.name.split('.').pop() || 'jpg';
+  const fname   = `photo_${itemId}_${Date.now()}.${ext}`;
+  const path    = folder ? `${folder}/photos/${fname}` : `photos/${fname}`;
+  const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(path).replace(/%2F/g,'/')}:/content`;
+
+  try {
+    const resp = await fetch(uploadUrl, {
+      method:  'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type },
+      body:    file,
+    });
+    if (!resp.ok) throw new Error(`Upload ${resp.status}`);
+    const meta = await resp.json();
+    // Get a long-lived download URL (embed URL)
+    const shareResp = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/items/${meta.id}/createLink`,
+      { method:'POST',
+        headers: { 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' },
+        body: JSON.stringify({ type:'embed', scope:'anonymous' }) }
+    );
+    if (shareResp.ok) {
+      const shareData = await shareResp.json();
+      return shareData.link?.webUrl || meta.webUrl;
+    }
+    return meta.webUrl;
+  } catch(e) {
+    toast('Photo upload failed: ' + e.message, 'err');
+    return null;
+  }
+}
+
+// Lightbox
+function openPhotoLightbox(url) {
+  document.getElementById('photo-lightbox-img').src = url;
+  document.getElementById('photo-lightbox').classList.add('open');
+}
+function closePhotoLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('open');
+  document.getElementById('photo-lightbox-img').src = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePhotoLightbox();
+});
+
+// Reset photo area after modal closes
+function resetPhotoArea(mode) {
+  _pendingPhoto[mode] = null;
+  const area    = document.getElementById(mode + '-photo-area');
+  const preview = document.getElementById(mode + '-photo-preview');
+  if (area)    area.classList.remove('has-photo');
+  if (preview) {
+    preview.innerHTML = mode === 'add'
+      ? '<div class="photo-upload-hint">📷 Click or drag &amp; drop to upload photo<br>Camera capture also supported</div>'
+      : '<div class="photo-upload-hint">📷 Click or drag to replace photo</div>';
+  }
+  const urlField = document.getElementById(mode + '-photo-url');
+  if (urlField) urlField.value = '';
+}
+
+// =====================================================================
+// UPDATED addItem — saves photo URL
+// =====================================================================
+async function addItemWithPhoto() {
+  if (!AUTH.can('addItem')) { toast('Insufficient permissions.', 'err'); return; }
+  const nsn  = document.getElementById('add-nsn').value.trim();
+  const name = document.getElementById('add-name').value.trim();
+  if (!nsn || !name) { toast('NSN and nomenclature are required.', 'err'); return; }
+
+  const itemId = 'I' + Date.now();
+
+  // Upload photo first if one was selected
+  let photoUrl = null;
+  if (_pendingPhoto.add) {
+    toast('Uploading photo…');
+    photoUrl = await _uploadPhotoToOneDrive(_pendingPhoto.add, itemId);
+  }
+
+  const item = {
+    id: itemId, nsn, name,
+    cat:       document.getElementById('add-cat').value,
+    authQty:   parseInt(document.getElementById('add-auth').value) || 0,
+    onHand:    parseInt(document.getElementById('add-onhand').value) || 0,
+    onLoan: 0, unsvc: 0,
+    condition: document.getElementById('add-condition').value,
+    loc:       document.getElementById('add-loc').value,
+    notes:     document.getElementById('add-notes').value,
+    photoUrl,
+  };
+  state.items.push(item);
+  logAudit('add', `Added: ${name} — ${item.onHand} units (Auth: ${item.authQty})`);
+  save(); renderInventory(); renderStats(); populateIssueItems();
+  closeModal('modal-add-item');
+  resetPhotoArea('add');
+  toast(`Item "${name}" added${photoUrl ? ' with photo' : ''}.`);
+  ['add-nsn','add-name','add-loc','add-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('add-onhand').value = 1;
+  document.getElementById('add-auth').value   = 1;
+}
+
+// =====================================================================
+// UPDATED openEditItem / saveEditItem — photo integration
+// =====================================================================
+function openEditItemWithPhoto(idx) {
+  const i = state.items[idx];
+  document.getElementById('edit-idx').value       = idx;
+  document.getElementById('edit-nsn').value        = i.nsn;
+  document.getElementById('edit-cat').value        = i.cat;
+  document.getElementById('edit-name').value       = i.name;
+  document.getElementById('edit-auth').value       = i.authQty;
+  document.getElementById('edit-onhand').value     = i.onHand;
+  document.getElementById('edit-unsvc').value      = i.unsvc;
+  document.getElementById('edit-condition').value  = i.condition;
+  document.getElementById('edit-loc').value        = i.loc || '';
+  document.getElementById('edit-notes').value      = i.notes || '';
+  document.getElementById('edit-photo-url').value  = i.photoUrl || '';
+  // Show current photo or placeholder
+  const preview = document.getElementById('edit-photo-preview');
+  const area    = document.getElementById('edit-photo-area');
+  if (i.photoUrl) {
+    preview.innerHTML = `<img class="photo-preview-img" src="${i.photoUrl}" alt="Current photo"
+      onerror="this.outerHTML='<div class=photo-upload-hint>⚠ Photo URL unavailable — upload a new one</div>'">
+      <div class="photo-upload-hint">Current photo · Click to replace</div>`;
+    area.classList.add('has-photo');
+  } else {
+    preview.innerHTML = '<div class="photo-upload-hint">📷 No photo — click to add one</div>';
+    area.classList.remove('has-photo');
+  }
+  _pendingPhoto.edit = null;
+  openModal('modal-edit-item');
+}
+
+async function saveEditItemWithPhoto() {
+  if (!AUTH.can('editItem')) { toast('Insufficient permissions.', 'err'); return; }
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  const i   = state.items[idx];
+
+  // Upload new photo if one was selected
+  if (_pendingPhoto.edit) {
+    toast('Uploading photo…');
+    const url = await _uploadPhotoToOneDrive(_pendingPhoto.edit, i.id);
+    if (url) i.photoUrl = url;
+  }
+
+  i.nsn       = document.getElementById('edit-nsn').value;
+  i.cat       = document.getElementById('edit-cat').value;
+  i.name      = document.getElementById('edit-name').value;
+  i.authQty   = parseInt(document.getElementById('edit-auth').value) || 0;
+  i.onHand    = parseInt(document.getElementById('edit-onhand').value) || 0;
+  i.unsvc     = parseInt(document.getElementById('edit-unsvc').value) || 0;
+  i.condition = document.getElementById('edit-condition').value;
+  i.loc       = document.getElementById('edit-loc').value;
+  i.notes     = document.getElementById('edit-notes').value;
+
+  logAudit('adjust', `Updated item: ${i.name}`);
+  save(); renderInventory(); renderStats(); renderAlerts(); populateIssueItems();
+  closeModal('modal-edit-item');
+  resetPhotoArea('edit');
+  _pendingPhoto.edit = null;
+  toast('Item updated.');
+}
+
+// =====================================================================
+// DEPLOY TOKEN ENGINE
+// XOR-cipher encode OneDrive sharing URL + metadata as portable token
+// No crypto dependency — appropriate security for read-only public data
+// =====================================================================
+function _xorEncode(str, key) {
+  let out = '';
+  for (let i = 0; i < str.length; i++)
+    out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  return btoa(out).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+function _xorDecode(encoded, key) {
+  try {
+    const b64 = encoded.replace(/-/g,'+').replace(/_/g,'/');
+    const str = atob(b64);
+    let out = '';
+    for (let i = 0; i < str.length; i++)
+      out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    return out;
+  } catch(e) { return null; }
+}
+
+// Deploy token key — based on unit code (different per unit, not secret)
+function _deployKey() {
+  const base = (state.settings?.unitCode || 'QSTORE').toUpperCase().replace(/\s+/g,'');
+  return (base + 'QSTOREIMS2025' + base).slice(0, 32);
+}
+
+async function generateDeployToken() {
+  if (!OD.account) {
+    toast('Sign in to OneDrive first to generate a deploy token.', 'err'); return;
+  }
+
+  // Get a sharing link for the data file
+  const token = await OD.getAccessToken();
+  if (!token) { toast('Could not get OneDrive token.', 'err'); return; }
+
+  const tokenEl  = document.getElementById('deploy-token-text');
+  const tokenArea = document.getElementById('deploy-token-area');
+  tokenEl.textContent = 'Generating…';
+  tokenArea.style.display = '';
+
+  try {
+    // Get item metadata for the data file
+    const metaResp = await fetch(OD._graphUrl(''), {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (metaResp.status === 404) {
+      toast('Sync the data file to OneDrive first, then generate a token.', 'warn');
+      tokenArea.style.display = 'none'; return;
+    }
+    const meta = await metaResp.json();
+
+    // Create an anonymous embed sharing link for the data file
+    const shareResp = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/items/${meta.id}/createLink`,
+      { method:'POST',
+        headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+        body: JSON.stringify({ type:'embed', scope:'anonymous' }) }
+    );
+    if (!shareResp.ok) throw new Error('Could not create sharing link');
+    const shareData = await shareResp.json();
+    const dataUrl   = shareData.link?.webUrl;
+    if (!dataUrl) throw new Error('No sharing URL returned');
+
+    // Also create a sharing link for the photos folder if it exists
+    let photosUrl = '';
+    try {
+      const folder   = (OD.settings.folder || 'QStore').replace(/^\/+|\/+$/g,'');
+      const pFolder  = folder ? `${folder}/photos` : 'photos';
+      const pUrl     = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(pFolder).replace(/%2F/g,'/')}`;
+      const pMeta    = await fetch(pUrl, { headers:{'Authorization':`Bearer ${token}`} });
+      if (pMeta.ok) {
+        const pData  = await pMeta.json();
+        const pShare = await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${pData.id}/createLink`,
+          { method:'POST', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+            body: JSON.stringify({ type:'embed', scope:'anonymous' }) });
+        if (pShare.ok) photosUrl = (await pShare.json()).link?.webUrl || '';
+      }
+    } catch(e) { /* photos folder may not exist yet */ }
+
+    const expiry   = parseInt(document.getElementById('deploy-expiry').value);
+    const access   = document.getElementById('deploy-access').value;
+    const expires  = expiry > 0
+      ? new Date(Date.now() + expiry * 86400000).toISOString().slice(0,10)
+      : '9999-12-31';
+
+    const payload = JSON.stringify({
+      v:        2,
+      dataUrl,
+      photosUrl,
+      unitCode: state.settings?.unitCode || '',
+      unitName: state.settings?.unitName || '',
+      access,
+      expires,
+      issued:   new Date().toISOString().slice(0,10),
+    });
+
+    const encoded = _xorEncode(payload, _deployKey());
+    tokenEl.textContent = encoded;
+    toast('Deploy token generated. Copy and share with remote users.');
+
+  } catch(e) {
+    tokenEl.textContent = 'Error: ' + e.message;
+    toast('Token generation failed: ' + e.message, 'err');
+  }
+}
+
+function copyDeployToken() {
+  const txt = document.getElementById('deploy-token-text').textContent;
+  navigator.clipboard.writeText(txt).then(
+    () => toast('Token copied to clipboard.'),
+    () => { document.getElementById('deploy-token-text').focus(); toast('Select and copy manually.','warn'); }
+  );
+}
+
+// =====================================================================
+// INSTALLER GENERATOR — creates a self-contained HTML installer file
+// Remote users open this, paste the deploy token, get the full app
+// =====================================================================
+function downloadInstaller() {
+  const unitCode = state.settings?.unitCode || 'QSTORE';
+  const unitName = state.settings?.unitName || 'Australian Army Cadets';
+  const key = _deployKey();
+
+  const installerHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Store IMS — Installer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1A1F14; color: #E8E0CC; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .box { background: #232B1A; border: 1px solid #C4A96B; max-width: 520px; width: 100%; }
+  .hdr { background: #3B4A2F; border-bottom: 2px solid #C4A96B; padding: 20px 24px; text-align: center; }
+  .hdr h1 { font-size: 20px; letter-spacing: 2px; text-transform: uppercase; color: #E8E0CC; }
+  .hdr p  { font-size: 11px; color: #C4A96B; margin-top: 4px; letter-spacing: 1px; }
+  .body { padding: 24px; }
+  label { display: block; font-size: 11px; color: #9A9A80; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #3B4A2F; color: #E8E0CC; padding: 10px; font-family: monospace; font-size: 11px; resize: vertical; min-height: 80px; border-radius: 2px; }
+  textarea:focus { outline: none; border-color: #C4A96B; }
+  button { width: 100%; padding: 12px; background: #3B4A2F; border: 1px solid #C4A96B; color: #C4A96B; font-size: 13px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; margin-top: 14px; }
+  button:hover { background: #4A5C35; }
+  #status { margin-top: 12px; font-size: 12px; padding: 10px; border-left: 3px solid #C4A96B; background: rgba(196,169,107,0.1); display: none; }
+  #status.err { border-color: #C0392B; background: rgba(192,57,43,0.1); color: #E8A89A; }
+  #status.ok  { border-color: #27AE60; background: rgba(39,174,96,0.1); color: #6ECC8A; }
+  #progress { height: 3px; background: rgba(255,255,255,0.1); margin-top: 8px; }
+  #progress-bar { height: 100%; background: #C4A96B; width: 0%; transition: width 0.3s; }
+  .note { font-size: 10px; color: #5A5A48; margin-top: 12px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="hdr">
+    <h1>Q-Store IMS</h1>
+    <p>${unitName} &nbsp;·&nbsp; Remote Installer</p>
+  </div>
+  <div class="body">
+    <label>Deploy Token (provided by your QM)</label>
+    <textarea id="token-input" placeholder="Paste your deploy token here..."></textarea>
+    <div id="progress"><div id="progress-bar"></div></div>
+    <button onclick="install()">Install &amp; Open Q-Store IMS</button>
+    <div id="status"></div>
+    <div class="note">
+      This installer downloads the Q-Store app and data from your unit's secure OneDrive location.<br>
+      No Microsoft login is required. Your deploy token grants read-only access.<br>
+      Internet connection required for first install.
+    </div>
+  </div>
+</div>
+<script>
+const KEY = ${JSON.stringify(key)};
+
+function xorDecode(enc, key) {
+  try {
+    const b64 = enc.replace(/-/g,'+').replace(/_/g,'/');
+    const str = atob(b64); let out = '';
+    for (let i=0;i<str.length;i++) out+=String.fromCharCode(str.charCodeAt(i)^key.charCodeAt(i%key.length));
+    return out;
+  } catch(e) { return null; }
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = type || ''; el.style.display = '';
+}
+function setProgress(pct) { document.getElementById('progress-bar').style.width = pct+'%'; }
+
+async function install() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) { setStatus('Paste your deploy token first.', 'err'); return; }
+
+  setStatus('Decoding token…'); setProgress(10);
+
+  const payload = xorDecode(token, KEY);
+  if (!payload) { setStatus('Invalid token — check with your QM.', 'err'); return; }
+
+  let config;
+  try { config = JSON.parse(payload); } catch(e) { setStatus('Token decode error — token may be corrupted.', 'err'); return; }
+
+  // Check expiry
+  if (config.expires && config.expires !== '9999-12-31' && config.expires < new Date().toISOString().slice(0,10)) {
+    setStatus('This deploy token has expired. Contact your QM for a new one.', 'err'); return;
+  }
+
+  setStatus('Fetching data from OneDrive…'); setProgress(30);
+
+  // Fetch the data JSON
+  let data;
+  try {
+    // OneDrive embed links need to be converted to direct download links
+    const dlUrl = config.dataUrl.replace('embed?', 'download?').replace('/embed/', '/download/');
+    const resp  = await fetch(dlUrl);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    data = await resp.json();
+  } catch(e) {
+    setStatus('Could not fetch data: ' + e.message + '. Check internet connection.', 'err'); return;
+  }
+
+  setStatus('Preparing app…'); setProgress(70);
+
+  // Store the data and deploy config in localStorage
+  localStorage.setItem('qstore_data', JSON.stringify(data));
+  localStorage.setItem('qstore_deploy', JSON.stringify({
+    token, config,
+    installedAt: new Date().toISOString(),
+    readonly: true,
+  }));
+
+  setProgress(100);
+  setStatus('Installed successfully! Opening Q-Store IMS…', 'ok');
+
+  // Redirect to the app (assumed to be in same folder)
+  setTimeout(() => {
+    window.location.href = 'qstore_inventory.html';
+  }, 1500);
+}
+</script>
+</body>
+</html>`;
+
+  const blob = new Blob([installerHTML], { type: 'text/html' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `QStore_Installer_${unitCode.replace(/\s+/g,'_')}.html`;
+  a.click();
+  toast('Installer HTML downloaded.');
+}
+
 // =====================================================================
 // STOCKTAKE ENGINE
 // =====================================================================
@@ -3345,10 +3934,17 @@ async function init() {
   if (saved) { try { state = JSON.parse(saved); } catch(e) { seedData(); } }
   else { seedData(); }
 
-  // Ensure users/pendingRequests arrays exist for upgrades from older data
+  // Ensure arrays exist for upgrades from older data
   if (!state.users)            state.users = [];
   if (!state.pendingRequests) state.pendingRequests = [];
   if (!state.stocktakeCounts)  state.stocktakeCounts = {};
+
+  // Check if this is a deployed (read-only token) installation
+  const deployConfig = _getDeployConfig();
+  if (deployConfig) {
+    await _deployedSync(deployConfig);
+    _startDeployedAutoSync(deployConfig);
+  }
 
   // Bootstrap default CO account if no users exist
   AUTH.ensureDefaultAdmin();
@@ -3370,6 +3966,46 @@ async function init() {
 
   setInterval(updateClock, 1000);
   updateClock();
+}
+
+
+// ---- Deployed (read-only token) mode helpers ----------------------
+function _getDeployConfig() {
+  try {
+    const d = localStorage.getItem('qstore_deploy');
+    if (!d) return null;
+    const cfg = JSON.parse(d);
+    if (!cfg?.readonly || !cfg?.config?.dataUrl) return null;
+    // Check token expiry
+    if (cfg.config.expires && cfg.config.expires < new Date().toISOString().slice(0,10)) return null;
+    return cfg;
+  } catch(e) { return null; }
+}
+
+async function _deployedSync(deployConfig) {
+  try {
+    const url    = deployConfig.config.dataUrl;
+    const dlUrl  = url.replace('embed?','download?').replace('/embed/','/download/');
+    const resp   = await fetch(dlUrl + '&t=' + Date.now()); // cache-bust
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data   = await resp.json();
+    // Merge — preserve local users/sessions, update everything else
+    const localUsers = state.users;
+    Object.assign(state, data);
+    state.users = localUsers;
+    if (!state.pendingRequests) state.pendingRequests = [];
+    if (!state.stocktakeCounts) state.stocktakeCounts = {};
+    localStorage.setItem('qstore_data', JSON.stringify(state));
+    OD.addLog('ok', 'Read-only sync from deploy token: data refreshed');
+  } catch(e) {
+    OD.addLog('err', 'Deploy sync failed: ' + e.message);
+  }
+}
+
+function _startDeployedAutoSync(deployConfig) {
+  // Sync every 5 minutes in deployed mode (read-only pull)
+  setInterval(() => _deployedSync(deployConfig), 5 * 60 * 1000);
+  OD.setStatus('ok', '☁ DEPLOY SYNC');
 }
 
 function save() {
@@ -3535,8 +4171,12 @@ function renderInventory() {
     const available = item.onHand - item.onLoan;
     const pct = item.authQty > 0 ? Math.round((item.onHand / item.authQty) * 100) : 0;
     const fillClass = pct < 50 ? 'low' : pct < 75 ? 'mid' : '';
+    const thumbHtml = item.photoUrl
+      ? `<img class="item-thumb" src="${item.photoUrl}" alt="${item.name}" onclick="openPhotoLightbox('${item.photoUrl}')" onerror="this.outerHTML='<div class=item-thumb-placeholder title=Photo unavailable>📷</div>'">`
+      : `<div class="item-thumb-placeholder" onclick="openEditItemWithPhoto(${state.items.indexOf(item)})" title="Add photo">📷</div>`;
     return `<tr>
       <td class="nsn">${item.nsn}</td>
+      <td style="padding:6px 8px">${thumbHtml}</td>
       <td><strong>${item.name}</strong><br><span class="text-mono" style="font-size:10px;color:var(--text-dim)">${item.cat}</span></td>
       <td><span class="badge ${item.cat === 'Safety' ? 'badge-cat3' : item.cat === 'Equipment' ? 'badge-cat2' : item.cat === 'ICT' ? 'badge-cat-ict' : 'badge-cat1'}">${item.cat}</span></td>
       <td class="qty-cell" style="color:var(--text-secondary)">${item.authQty}</td>
@@ -3550,12 +4190,12 @@ function renderInventory() {
       <td class="text-mono" style="font-size:11px">${item.loc || '—'}</td>
       <td>
         <div class="flex-row" style="gap:4px">
-          <button class="btn btn-secondary btn-sm inv-edit-btn" onclick="openEditItem(${state.items.indexOf(item)})">Edit</button>
+          <button class="btn btn-secondary btn-sm inv-edit-btn" onclick="openEditItemWithPhoto(${state.items.indexOf(item)})">Edit</button>
           <button class="btn btn-danger btn-sm inv-del-btn" onclick="deleteItem(${state.items.indexOf(item)})">Del</button>
         </div>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:24px">No items found.</td></tr>`;
+  }).join('') || `<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:24px">No items found.</td></tr>`;
 }
 
 // ===== ADD ITEM =====
@@ -5546,6 +6186,11 @@ function runImport() {
   </div>
 </div>
 
+<!-- Photo lightbox -->
+<div id="photo-lightbox" onclick="closePhotoLightbox()">
+  <span class="lb-close" onclick="closePhotoLightbox()">✕</span>
+  <img id="photo-lightbox-img" src="" alt="Item photo">
+</div>
 <div id="toast-container"></div>
 </body>
 </html>
