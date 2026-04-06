@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Store IMS — Australian Army Cadets</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script>
+(function() {
+  function loadScript(src, onload, onerror) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onload;
+    s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+  var primary  = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+  var fallback = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js';
+  window.__msalReady = false;
+  loadScript(primary, function() {
+    window.__msalReady = true;
+  }, function() {
+    console.warn('MSAL primary CDN failed, trying fallback...');
+    loadScript(fallback, function() {
+      window.__msalReady = true;
+    }, function() {
+      console.error('MSAL failed to load from both CDNs. OneDrive sync will be unavailable.');
+      window.__msalReady = false;
+    });
+  });
+})();
+</script>
+<style>
+  :root {
+    --army-green: #3B4A2F;
+    --olive: #4A5C35;
+    --tan: #C4A96B;
+    --dark-bg: #1A1F14;
+    --panel-bg: #232B1A;
+    --panel-border: #3B4A2F;
+    --text-primary: #E8E0CC;
+    --text-secondary: #9A9A80;
+    --text-dim: #5A5A48;
+    --accent-amber: #D4930A;
+    --accent-red: #C0392B;
+    --accent-green: #27AE60;
+    --accent-blue: #2471A3;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Barlow Condensed', sans-serif;
+    --body: 'Barlow', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    font-family: var(--body);
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    background: var(--army-green);
+    border-bottom: 3px solid var(--tan);
+    padding: 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 24px;
+    background: var(--dark-bg);
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .header-classification {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent-amber);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-datetime {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .header-main {
+    display: flex; align-items: center; gap: 20px;
+    padding: 12px 24px;
+  }
+
+  .unit-crest {
+    width: 52px; height: 52px;
+    background: var(--tan);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--dark-bg);
+    flex-shrink: 0;
+  }
+
+  .header-title h1 {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .header-title .subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--tan);
+    letter-spacing: 2px;
+    margin-top: 3px;
+  }
+
+  .header-status {
+    margin-left: auto;
+    display: flex; gap: 20px; align-items: center;
+  }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-pill.online { background: rgba(39,174,96,0.2); border: 1px solid var(--accent-green); color: var(--accent-green); }
+  .status-pill.unit { background: rgba(212,147,10,0.15); border: 1px solid var(--tan); color: var(--tan); }
+  .status-pill.sync-ok { background: rgba(39,174,96,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); cursor:pointer; }
+  .status-pill.sync-busy { background: rgba(36,113,163,0.2); border: 1px solid var(--accent-blue); color: #5BA4D4; cursor:default; }
+  .status-pill.sync-err { background: rgba(192,57,43,0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor:pointer; }
+  .status-pill.sync-off { background: rgba(90,90,72,0.3); border: 1px solid var(--text-dim); color: var(--text-dim); cursor:pointer; }
+  .status-pill.sync-dirty { background: rgba(212,147,10,0.15); border: 1px solid var(--accent-amber); color: var(--accent-amber); cursor:pointer; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display:inline-block; animation: spin 1s linear infinite; }
+
+  nav {
+    display: flex;
+    padding: 0 24px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--panel-border);
+    gap: 2px;
+  }
+
+  .nav-tab {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+  .nav-tab.active { color: var(--tan); border-bottom-color: var(--tan); background: rgba(196,169,107,0.05); }
+
+  main { padding: 20px 24px; min-height: calc(100vh - 120px); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    margin-bottom: 16px;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(59,74,47,0.4);
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tan);
+  }
+
+  .panel-body { padding: 16px; }
+
+  .btn {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .btn-primary { background: var(--army-green); color: var(--tan); border: 1px solid var(--tan); }
+  .btn-primary:hover { background: var(--olive); }
+  .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--panel-border); }
+  .btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .btn-sm { padding: 5px 12px; font-size: 10px; }
+
+  .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .mb-12 { margin-bottom: 12px; }
+  .text-mono { font-family: var(--mono); font-size: 11px; }
+
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9000;
+    background: var(--dark-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #login-screen.hidden { display: none; }
+
+  .login-box {
+    background: var(--panel-bg);
+    border: 1px solid var(--tan);
+    width: 100%; max-width: 420px;
+    padding: 0;
+  }
+  .login-header {
+    background: var(--army-green);
+    border-bottom: 2px solid var(--tan);
+    padding: 20px 24px 16px;
+    text-align: center;
+  }
+  .login-header .login-crest {
+    width: 44px; height: 44px;
+    background: var(--tan);
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: bold; font-size: 12px;
+    color: var(--dark-bg); margin: 0 auto 10px;
+  }
+  .login-header h2 {
+    font-family: var(--display); font-weight: 900; font-size: 16px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+  }
+  .login-header .login-unit {
+    font-family: var(--mono); font-size: 9px; color: var(--tan);
+    letter-spacing: 2px; margin-top: 4px;
+  }
+  .login-body { padding: 24px; }
+
+  .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .user-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border);
+    cursor: pointer; transition: all 0.12s; width: 100%; text-align: left;
+  }
+  .user-btn:hover { border-color: var(--tan); background: rgba(196,169,107,0.06); }
+  .user-btn.selected { border-color: var(--tan); background: rgba(196,169,107,0.1); }
+  .user-btn .ub-avatar {
+    width: 32px; height: 32px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; font-weight: bold;
+    flex-shrink: 0;
+  }
+  .ub-avatar.role-co    { background: rgba(192,57,43,0.3);  color: var(--accent-red); }
+  .ub-avatar.role-qm    { background: rgba(212,147,10,0.3); color: var(--accent-amber); }
+  .ub-avatar.role-cadet { background: rgba(36,113,163,0.3); color: #5BA4D4; }
+  .ub-avatar.role-ro    { background: rgba(59,74,47,0.6);   color: var(--text-secondary); }
+  .user-btn .ub-info { flex: 1; }
+  .user-btn .ub-name { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 1px; color: var(--text-primary); }
+  .user-btn .ub-role { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+
+  .pin-dots { display: flex; gap: 10px; justify-content: center; margin: 12px 0; }
+  .pin-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--panel-border); background: transparent;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .pin-dot.filled { background: var(--tan); border-color: var(--tan); }
+
+  .pin-pad {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 12px;
+  }
+  .pin-key {
+    padding: 12px; text-align: center; cursor: pointer;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border);
+    font-family: var(--display); font-weight: 700; font-size: 18px;
+    color: var(--text-primary); transition: all 0.1s;
+    user-select: none;
+  }
+  .pin-key:hover  { background: rgba(196,169,107,0.12); border-color: var(--tan); }
+  .pin-key:active { background: rgba(196,169,107,0.25); }
+  .pin-key.del    { font-size: 14px; color: var(--text-secondary); }
+  .pin-key.zero   { grid-column: 2; }
+
+  .login-error {
+    font-family: var(--mono); font-size: 11px; color: var(--accent-red);
+    text-align: center; min-height: 18px; margin-top: 8px;
+  }
+
+  .session-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 10px;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border);
+    cursor: pointer;
+  }
+  .session-bar:hover { border-color: var(--tan); }
+  .session-bar .sb-name { font-family: var(--mono); font-size: 10px; color: var(--text-primary); }
+  .session-bar .sb-role { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+  .sb-avatar {
+    width: 22px; height: 22px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 9px; font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="header-classification">⬛ OFFICIAL — SENSITIVE · DEFENCE ACT 1903 PROTECTED ⬛</span>
+    <span class="header-datetime" id="clock">--</span>
+  </div>
+  <div class="header-main">
+    <div class="unit-crest">AAC</div>
+    <div class="header-title">
+      <h1>Q-Store Inventory Management System</h1>
+      <div class="subtitle">Australian Army Cadets · Unit Quartermaster Module · IMS v3.1</div>
+    </div>
+    <div class="header-status">
+      <span class="status-pill unit" id="unit-name-badge">1 ACTU</span>
+      <div class="session-bar" id="session-bar" onclick="showLogoutConfirm()" title="Click to sign out">
+        <div class="sb-avatar role-co" id="session-avatar">?</div>
+        <div>
+          <div class="sb-name" id="session-name">Not signed in</div>
+          <div class="sb-role" id="session-role">—</div>
+        </div>
+      </div>
+      <span class="status-pill sync-off" id="sync-status-pill" onclick="syncPillClicked()" title="OneDrive Sync">☁ NOT CONFIGURED</span>
+      <span class="status-pill online">● SYSTEM ONLINE</span>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('inventory')">Inventory Register</button>
+    <button class="nav-tab" id="nav-issue"   onclick="showPage('issue')">Issue / Return</button>
+    <button class="nav-tab" onclick="showPage('loans')">Active Loans</button>
+    <button class="nav-tab" id="nav-cadets"  onclick="showPage('cadets')">Cadet Register</button>
+    <button class="nav-tab" onclick="showPage('reports')">Reports & DA Forms</button>
+    <button class="nav-tab" onclick="showPage('qr')">QR / Labels</button>
+    <button class="nav-tab" id="nav-import"  onclick="showPage('import')">CSV Import</button>
+    <button class="nav-tab" onclick="showPage('audit')">Audit Log</button>
+    <button class="nav-tab" id="nav-users"   onclick="showPage('users')">Users</button>
+    <button class="nav-tab" id="nav-settings" onclick="showPage('settings')">Settings</button>
+  </nav>
+</header>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-crest">AAC</div>
+      <h2>Q-Store IMS</h2>
+      <div class="login-unit" id="login-unit-name">Australian Army Cadets</div>
+    </div>
+    <div class="login-body">
+      <!-- Step 1: select user -->
+      <div id="login-step-select">
+        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Select Account</div>
+        <div class="user-list" id="login-user-list"></div>
+        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;font-family:var(--mono);">
+          Contact your QM or CO to create an account.
+        </div>
+      </div>
+      <!-- Step 2: enter PIN -->
+      <div id="login-step-pin" style="display:none">
+        <div class="flex-row mb-12" style="gap:8px;align-items:center;">
+          <button class="btn btn-secondary btn-sm" onclick="loginBack()">← Back</button>
+          <span style="font-family:var(--display);font-weight:700;font-size:14px;" id="pin-user-label"></span>
+        </div>
+        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-align:center;margin-bottom:6px;">ENTER PIN</div>
+        <div class="pin-dots" id="pin-dots">
+          <div class="pin-dot" id="pd0"></div>
+          <div class="pin-dot" id="pd1"></div>
+          <div class="pin-dot" id="pd2"></div>
+          <div class="pin-dot" id="pd3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('1')">1</div>
+          <div class="pin-key" onclick="pinKey('2')">2</div>
+          <div class="pin-key" onclick="pinKey('3')">3</div>
+          <div class="pin-key" onclick="pinKey('4')">4</div>
+          <div class="pin-key" onclick="pinKey('5')">5</div>
+          <div class="pin-key" onclick="pinKey('6')">6</div>
+          <div class="pin-key" onclick="pinKey('7')">7</div>
+          <div class="pin-key" onclick="pinKey('8')">8</div>
+          <div class="pin-key" onclick="pinKey('9')">9</div>
+          <div class="pin-key del" onclick="pinDel()">⌫</div>
+          <div class="pin-key zero" onclick="pinKey('0')">0</div>
+        </div>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+  </div>
+  <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:16px;letter-spacing:1px;">
+    IMS v3.2 · OFFICIAL USE ONLY · ALL ACCESS LOGGED
+  </div>
+</div>
+
+<main>
+  <div id="page-dashboard" class="page active">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Dashboard</span>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--text-secondary);">Welcome to Q-Store IMS. Select a page from the menu above.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-inventory" class="page">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Inventory Register</span>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--text-secondary);">Inventory management coming soon.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOGIN SYSTEM - User Account Management & PIN Authentication
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const LOGIN_USERS = [
+  { id: 1, name: "LCpl Johnson", rank: "LCpl", service: "1ACTU", role: "co", pin: "1234" },
+  { id: 2, name: "Pte Smith", rank: "Pte", service: "1ACTU", role: "qm", pin: "5678" },
+  { id: 3, name: "C/Cdt Williams", rank: "C/Cdt", service: "1ACTU", role: "cadet", pin: "9012" },
+  { id: 4, name: "Sgt Brown", rank: "Sgt", service: "1ACTU", role: "ro", pin: "3456" },
+  { id: 5, name: "Pte Anderson", rank: "Pte", service: "1ACTU", role: "cadet", pin: "7890" }
+];
+
+let currentUser = null;
+let currentPin = '';
+
+function loadLoginUsers() {
+  const userList = document.getElementById('login-user-list');
+  if (!userList) {
+    console.warn('login-user-list element not found');
+    return;
+  }
+  
+  userList.innerHTML = '';
+  
+  LOGIN_USERS.forEach(user => {
+    const btn = document.createElement('div');
+    btn.className = 'user-btn';
+    btn.innerHTML = `
+      <div class="ub-avatar role-${user.role}">${user.rank.charAt(0)}</div>
+      <div class="ub-info">
+        <div class="ub-name">${user.name}</div>
+        <div class="ub-role">${user.role.toUpperCase()}</div>
+      </div>
+    `;
+    btn.onclick = () => selectUser(user);
+    userList.appendChild(btn);
+  });
+}
+
+function selectUser(user) {
+  currentUser = user;
+  document.getElementById('login-step-select').style.display = 'none';
+  document.getElementById('login-step-pin').style.display = 'block';
+  document.getElementById('pin-user-label').textContent = user.name;
+  
+  currentPin = '';
+  updatePinDots();
+  document.getElementById('login-error').textContent = '';
+}
+
+function pinKey(num) {
+  if (currentPin.length < 4) {
+    currentPin += num;
+    updatePinDots();
+    
+    if (currentPin.length === 4) {
+      setTimeout(validatePin, 100);
+    }
+  }
+}
+
+function pinDel() {
+  currentPin = currentPin.slice(0, -1);
+  updatePinDots();
+  document.getElementById('login-error').textContent = '';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pd' + i);
+    if (i < currentPin.length) {
+      dot.classList.add('filled');
+    } else {
+      dot.classList.remove('filled');
+    }
+  }
+}
+
+function validatePin() {
+  if (!currentUser) return;
+  
+  if (currentPin === currentUser.pin) {
+    document.getElementById('login-screen').classList.add('hidden');
+    
+    document.getElementById('session-name').textContent = currentUser.name;
+    document.getElementById('session-role').textContent = currentUser.role.toUpperCase();
+    document.getElementById('session-avatar').className = `sb-avatar role-${currentUser.role}`;
+    document.getElementById('session-avatar').textContent = currentUser.rank.charAt(0);
+    
+    console.log('✓ Login successful:', currentUser.name);
+    initializeApp();
+  } else {
+    document.getElementById('login-error').textContent = '✗ Incorrect PIN. Try again.';
+    currentPin = '';
+    updatePinDots();
+  }
+}
+
+function loginBack() {
+  currentPin = '';
+  updatePinDots();
+  document.getElementById('login-step-select').style.display = 'block';
+  document.getElementById('login-step-pin').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
+  currentUser = null;
+}
+
+function showLogoutConfirm() {
+  if (!currentUser) return;
+  
+  const confirmed = confirm(`Sign out ${currentUser.name}?\n\nAll data will remain saved.`);
+  if (confirmed) {
+    currentUser = null;
+    currentPin = '';
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('login-step-select').style.display = 'block';
+    document.getElementById('login-step-pin').style.display = 'none';
+    loadLoginUsers();
+  }
+}
+
+function syncPillClicked() {
+  console.log('Sync status pill clicked');
+}
+
+function showPage(pageName) {
+  if (!currentUser) {
+    alert('You must be logged in to access this page.');
+    return;
+  }
+  
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => p.classList.remove('active'));
+  
+  const page = document.getElementById('page-' + pageName);
+  if (page) {
+    page.classList.add('active');
+  }
+}
+
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
+  const dateStr = now.toLocaleDateString('en-AU');
+  document.getElementById('clock').textContent = `${dateStr} ${timeStr}`;
+}
+
+function initializeApp() {
+  console.log('Application initialized for:', currentUser.name);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM ready - initializing Q-Store IMS');
+  loadLoginUsers();
+  updateClock();
+  setInterval(updateClock, 1000);
+  console.log('Q-Store IMS v3.2 ready');
+});
+
+</script>
+</body>
+</html>
