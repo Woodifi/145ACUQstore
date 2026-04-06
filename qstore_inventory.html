@@ -475,6 +475,59 @@
     color: var(--text-secondary);
   }
 
+  /* ── Item photo thumbnail ── */
+  .item-thumb-cell { width: 52px; text-align: center; padding: 6px 8px !important; }
+  .item-thumb {
+    width: 44px; height: 44px;
+    object-fit: cover;
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    display: block;
+    cursor: pointer;
+    transition: border-color 0.15s, opacity 0.15s;
+  }
+  .item-thumb:hover { border-color: var(--tan); opacity: 0.85; }
+  .item-thumb-placeholder {
+    width: 44px; height: 44px;
+    background: rgba(59,74,47,0.25);
+    border: 1px dashed var(--text-dim);
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-size: 18px;
+    color: var(--text-dim);
+  }
+  .item-thumb-placeholder:hover { border-color: var(--tan); background: rgba(196,169,107,0.08); color: var(--tan); }
+
+  /* Photo upload area in modals */
+  .photo-upload-area {
+    border: 2px dashed var(--panel-border);
+    border-radius: 2px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    min-height: 80px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .photo-upload-area:hover { border-color: var(--tan); background: rgba(196,169,107,0.05); }
+  .photo-upload-area.drag-over { border-color: var(--accent-green); background: rgba(39,174,96,0.07); }
+  .photo-upload-area .pua-preview {
+    width: 60px; height: 60px;
+    object-fit: cover;
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .photo-upload-area .pua-info { flex: 1; text-align: left; }
+  .photo-upload-area .pua-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+    color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .photo-upload-area .pua-hint { font-size: 11px; color: var(--text-dim); }
+
   .data-table .qty-cell {
     font-family: var(--mono);
     font-weight: bold;
@@ -778,7 +831,7 @@
   }
   .login-body { padding: 24px; }
 
-  .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+   .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   .user-btn {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 14px;
@@ -1034,6 +1087,7 @@
           <thead>
             <tr>
               <th>NSN / Stores Code</th>
+              <th style="width:52px">Photo</th>
               <th>Nomenclature</th>
               <th>Category</th>
               <th>Auth Qty</th>
@@ -2071,6 +2125,26 @@
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="add-notes" placeholder="Serial numbers, special handling instructions..."></textarea>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Item Photo <span style="color:var(--text-dim);font-size:9px">(stored on OneDrive with state sync)</span></label>
+          <div class="photo-upload-area" id="add-photo-area"
+               onclick="document.getElementById('add-photo-input').click()"
+               ondragover="photoAreaDragOver(event,'add-photo-area')"
+               ondragleave="photoAreaDragLeave('add-photo-area')"
+               ondrop="photoAreaDrop(event,'add-photo-preview','add-photo-area')">
+            <img id="add-photo-preview" class="pua-preview" src="" alt="" style="display:none">
+            <div class="pua-info">
+              <div class="pua-label">📷 Upload Photo</div>
+              <div class="pua-hint">Click or drag &amp; drop — JPG / PNG / WEBP<br>Will be resized to 120×120 and synced to OneDrive</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="add-photo-clear-btn"
+                    style="display:none;flex-shrink:0"
+                    onclick="event.stopPropagation();clearPhotoPreview('add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">✕ Clear</button>
+          </div>
+          <input type="hidden" id="add-photo-data">
+          <input type="file" id="add-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2295,6 +2369,26 @@
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="edit-notes"></textarea>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Item Photo <span style="color:var(--text-dim);font-size:9px">(stored on OneDrive with state sync)</span></label>
+          <div class="photo-upload-area" id="edit-photo-area"
+               onclick="document.getElementById('edit-photo-input').click()"
+               ondragover="photoAreaDragOver(event,'edit-photo-area')"
+               ondragleave="photoAreaDragLeave('edit-photo-area')"
+               ondrop="photoAreaDrop(event,'edit-photo-preview','edit-photo-area')">
+            <img id="edit-photo-preview" class="pua-preview" src="" alt="" style="display:none">
+            <div class="pua-info">
+              <div class="pua-label">📷 Item Photo</div>
+              <div class="pua-hint" id="edit-photo-hint">Click or drag &amp; drop to upload — JPG / PNG / WEBP</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="edit-photo-clear-btn"
+                    style="display:none;flex-shrink:0"
+                    onclick="event.stopPropagation();clearPhotoPreview('edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">✕ Remove</button>
+          </div>
+          <input type="hidden" id="edit-photo-data">
+          <input type="file" id="edit-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2303,8 +2397,6 @@
     </div>
   </div>
 </div>
-
-<div id="toast-container"></div>
 
 <script>
 // ===== STATE =====
@@ -3535,8 +3627,13 @@ function renderInventory() {
     const available = item.onHand - item.onLoan;
     const pct = item.authQty > 0 ? Math.round((item.onHand / item.authQty) * 100) : 0;
     const fillClass = pct < 50 ? 'low' : pct < 75 ? 'mid' : '';
+    const realIdx = state.items.indexOf(item);
+    const thumbHtml = item.photoData
+      ? `<img class="item-thumb" src="${item.photoData}" alt="${item.name}" title="Click to change photo" onclick="triggerPhotoUpload('${item.id}')">`
+      : `<div class="item-thumb-placeholder" title="Upload photo" onclick="triggerPhotoUpload('${item.id}')">📷</div>`;
     return `<tr>
       <td class="nsn">${item.nsn}</td>
+      <td class="item-thumb-cell">${thumbHtml}</td>
       <td><strong>${item.name}</strong><br><span class="text-mono" style="font-size:10px;color:var(--text-dim)">${item.cat}</span></td>
       <td><span class="badge ${item.cat === 'Safety' ? 'badge-cat3' : item.cat === 'Equipment' ? 'badge-cat2' : item.cat === 'ICT' ? 'badge-cat-ict' : 'badge-cat1'}">${item.cat}</span></td>
       <td class="qty-cell" style="color:var(--text-secondary)">${item.authQty}</td>
@@ -3550,12 +3647,12 @@ function renderInventory() {
       <td class="text-mono" style="font-size:11px">${item.loc || '—'}</td>
       <td>
         <div class="flex-row" style="gap:4px">
-          <button class="btn btn-secondary btn-sm inv-edit-btn" onclick="openEditItem(${state.items.indexOf(item)})">Edit</button>
-          <button class="btn btn-danger btn-sm inv-del-btn" onclick="deleteItem(${state.items.indexOf(item)})">Del</button>
+          <button class="btn btn-secondary btn-sm inv-edit-btn" onclick="openEditItem(${realIdx})">Edit</button>
+          <button class="btn btn-danger btn-sm inv-del-btn" onclick="deleteItem(${realIdx})">Del</button>
         </div>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:24px">No items found.</td></tr>`;
+  }).join('') || `<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:24px">No items found.</td></tr>`;
 }
 
 // ===== ADD ITEM =====
@@ -3574,6 +3671,7 @@ function addItem() {
     condition: document.getElementById('add-condition').value,
     loc: document.getElementById('add-loc').value,
     notes: document.getElementById('add-notes').value,
+    photoData: document.getElementById('add-photo-data').value || null,
   };
   state.items.push(item);
   logAudit('add', `Added: ${name} — ${item.onHand} units (Auth: ${item.authQty})`);
@@ -3583,6 +3681,7 @@ function addItem() {
   ['add-nsn','add-name','add-loc','add-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('add-onhand').value = 1;
   document.getElementById('add-auth').value = 1;
+  clearPhotoPreview('add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data');
 }
 
 function openEditItem(idx) {
@@ -3597,6 +3696,21 @@ function openEditItem(idx) {
   document.getElementById('edit-condition').value = i.condition;
   document.getElementById('edit-loc').value = i.loc || '';
   document.getElementById('edit-notes').value = i.notes || '';
+  // Populate photo
+  const photoData = i.photoData || '';
+  document.getElementById('edit-photo-data').value = photoData;
+  const preview = document.getElementById('edit-photo-preview');
+  const clearBtn = document.getElementById('edit-photo-clear-btn');
+  const hint = document.getElementById('edit-photo-hint');
+  if (photoData) {
+    preview.src = photoData; preview.style.display = 'block';
+    clearBtn.style.display = '';
+    hint.textContent = 'Click or drag to replace photo';
+  } else {
+    preview.src = ''; preview.style.display = 'none';
+    clearBtn.style.display = 'none';
+    hint.textContent = 'Click or drag & drop to upload — JPG / PNG / WEBP';
+  }
   openModal('modal-edit-item');
 }
 
@@ -3613,6 +3727,8 @@ function saveEditItem() {
   i.condition = document.getElementById('edit-condition').value;
   i.loc = document.getElementById('edit-loc').value;
   i.notes = document.getElementById('edit-notes').value;
+  const pd = document.getElementById('edit-photo-data').value;
+  i.photoData = pd || null;
   logAudit('adjust', `Updated item: ${i.name}`);
   save(); renderInventory(); renderStats(); renderAlerts(); populateIssueItems();
   closeModal('modal-edit-item');
@@ -5353,8 +5469,111 @@ const CSV_TEMPLATES = {
   loans:  'LoanRef,NSN,ItemName,Qty,BorrowerSvcNo,BorrowerName,Purpose,IssueDate,DueDate\nLN-2001,8405-66-013-4567,"Jacket DPCU",1,1234567,SGT SMITH,Annual Camp,2025-01-01,2025-01-14\n'
 };
 
-let csvParsedRows = [];
-let csvHeaders    = [];
+// ===== PHOTO UPLOAD — INVENTORY ITEMS =====
+// Images are compressed to 120×120 JPEG thumbnails and stored as base64
+// inside item.photoData, which is then synced to OneDrive as part of state.
+
+/**
+ * Resize & compress an image File to a compact base64 JPEG thumbnail.
+ * @param {File} file  - Image file from input/drop
+ * @param {Function} cb - callback(dataUrl) or callback(null) on failure
+ */
+function processItemPhoto(file, cb) {
+  if (!file || !file.type.startsWith('image/')) { toast('Please select a valid image file.', 'err'); cb(null); return; }
+  if (file.size > 10 * 1024 * 1024) { toast('Image too large (max 10 MB).', 'err'); cb(null); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const SIZE = 120;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE; canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      // Cover-crop: centre the image
+      const scale = Math.max(SIZE / img.width, SIZE / img.height);
+      const sw = SIZE / scale, sh = SIZE / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, SIZE, SIZE);
+      cb(canvas.toDataURL('image/jpeg', 0.78));
+    };
+    img.onerror = () => { toast('Could not read image.', 'err'); cb(null); };
+    img.src = e.target.result;
+  };
+  reader.onerror = () => { toast('File read error.', 'err'); cb(null); };
+  reader.readAsDataURL(file);
+}
+
+/** Called when a file is selected via <input type=file> in a modal */
+function handlePhotoFileInput(event, previewId, areaId, clearBtnId, dataId) {
+  const file = event.target.files[0]; if (!file) return;
+  event.target.value = '';
+  processItemPhoto(file, dataUrl => {
+    if (!dataUrl) return;
+    _setPhotoPreview(previewId, areaId, clearBtnId, dataId, dataUrl);
+  });
+}
+
+/** Drag-and-drop handlers */
+function photoAreaDragOver(e, areaId) {
+  e.preventDefault();
+  document.getElementById(areaId).classList.add('drag-over');
+}
+function photoAreaDragLeave(areaId) {
+  document.getElementById(areaId).classList.remove('drag-over');
+}
+function photoAreaDrop(e, previewId, areaId, clearBtnId, dataId) {
+  e.preventDefault();
+  document.getElementById(areaId).classList.remove('drag-over');
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  // Determine which modal we're in based on areaId
+  const cb  = areaId.startsWith('add') ? 'add-photo-clear-btn' : 'edit-photo-clear-btn';
+  const did = areaId.startsWith('add') ? 'add-photo-data'      : 'edit-photo-data';
+  processItemPhoto(file, dataUrl => {
+    if (!dataUrl) return;
+    _setPhotoPreview(previewId, areaId, cb, did, dataUrl);
+  });
+}
+
+function _setPhotoPreview(previewId, areaId, clearBtnId, dataId, dataUrl) {
+  const preview  = document.getElementById(previewId);
+  const clearBtn = document.getElementById(clearBtnId);
+  const dataEl   = document.getElementById(dataId);
+  preview.src = dataUrl; preview.style.display = 'block';
+  if (clearBtn) clearBtn.style.display = '';
+  if (dataEl)   dataEl.value = dataUrl;
+  // Update hint text if present
+  const hint = document.getElementById(areaId.replace('-area','-hint'));
+  if (hint) hint.textContent = 'Click or drag to replace photo';
+}
+
+/** Clear the photo preview and staged data */
+function clearPhotoPreview(previewId, areaId, clearBtnId, dataId) {
+  const preview  = document.getElementById(previewId);
+  const clearBtn = document.getElementById(clearBtnId);
+  const dataEl   = document.getElementById(dataId);
+  if (preview)  { preview.src = ''; preview.style.display = 'none'; }
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (dataEl)   dataEl.value = '';
+  const hint = document.getElementById(areaId.replace('-area','-hint'));
+  if (hint) hint.textContent = 'Click or drag & drop to upload — JPG / PNG / WEBP';
+}
+
+/**
+ * Triggered by clicking a thumbnail directly in the inventory table.
+ * Opens the Edit Item modal pre-populated, with focus on the photo field.
+ */
+function triggerPhotoUpload(itemId) {
+  const idx = state.items.findIndex(i => i.id === itemId);
+  if (idx < 0) return;
+  openEditItem(idx);
+  // Brief delay so modal is visible before scrolling
+  setTimeout(() => {
+    const area = document.getElementById('edit-photo-area');
+    if (area) area.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 180);
+}
+
+
 
 function resetImport() {
   csvParsedRows = []; csvHeaders = [];
