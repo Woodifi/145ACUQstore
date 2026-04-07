@@ -528,6 +528,22 @@
   }
   .photo-upload-area .pua-hint { font-size: 11px; color: var(--text-dim); }
 
+  /* Mobile camera capture button — hidden on desktop, shown by JS on mobile */
+  .pua-camera-btn {
+    display: none;   /* shown via JS when on mobile */
+    align-items: center; justify-content: center; gap: 6px;
+    margin-top: 8px; width: 100%;
+    padding: 10px 14px;
+    background: rgba(59,74,47,0.4);
+    border: 1px solid var(--tan);
+    color: var(--tan);
+    font-family: var(--display); font-weight: 700;
+    font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pua-camera-btn:active { background: rgba(196,169,107,0.2); }
+
   .data-table .qty-cell {
     font-family: var(--mono);
     font-weight: bold;
@@ -1025,14 +1041,12 @@
   }
 
   .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .ml-auto { margin-left: auto; }
   .mt-12 { margin-top: 12px; }
   .mb-12 { margin-bottom: 12px; }
   .text-mono { font-family: var(--mono); font-size: 11px; }
   .text-muted { color: var(--text-secondary); }
   .text-amber { color: var(--accent-amber); }
   .text-red { color: var(--accent-red); }
-  .text-green { color: var(--accent-green); }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
@@ -1154,19 +1168,6 @@
   .role-badge.role-qm    { background: rgba(212,147,10,0.2); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
   .role-badge.role-cadet { background: rgba(36,113,163,0.2); border: 1px solid #5BA4D4;             color: #5BA4D4; }
   .role-badge.role-ro    { background: rgba(90,90,72,0.3);   border: 1px solid var(--text-dim);     color: var(--text-dim); }
-
-  /* Locked overlay for restricted sections */
-  .perm-locked {
-    opacity: 0.35; pointer-events: none; position: relative;
-  }
-  .perm-locked::after {
-    content: '⛔ INSUFFICIENT CLEARANCE';
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 12px; color: var(--accent-red);
-    letter-spacing: 2px; background: rgba(0,0,0,0.5);
-    pointer-events: none;
-  }
 
   /* Pending request card */
   .request-card {
@@ -1373,7 +1374,6 @@
           <option value="Training Aids">Training Aids</option>
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
-          <option value="ICT">ICT</option>
           <option value="ICT">ICT</option>
         </select>
         <button class="btn btn-primary btn-sm" id="add-item-btn" onclick="openModal('modal-add-item')">+ Add Item</button>
@@ -1764,6 +1764,7 @@
           <option value="Training Aids">Training Aids</option>
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
+          <option value="ICT">ICT</option>
         </select>
         <button class="btn btn-secondary btn-sm" onclick="renderStocktake()">↺ Refresh</button>
         <button class="btn btn-amber" onclick="clearStocktakeCounts()">Clear All Counts</button>
@@ -2451,14 +2452,23 @@
             <img id="add-photo-preview" class="pua-preview" src="" alt="" style="display:none">
             <div class="pua-info">
               <div class="pua-label">📷 Upload Photo</div>
-              <div class="pua-hint">Click or drag &amp; drop — JPG / PNG / WEBP<br>Will be resized to 120×120 and synced to OneDrive</div>
+              <div class="pua-hint" id="add-photo-hint">Click or drag &amp; drop — JPG / PNG / WEBP<br>Will be resized to 120×120 and synced to OneDrive</div>
             </div>
             <button class="btn btn-secondary btn-sm" id="add-photo-clear-btn"
                     style="display:none;flex-shrink:0"
                     onclick="event.stopPropagation();clearPhotoPreview('add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">✕ Clear</button>
           </div>
+          <!-- Camera capture button — shown on mobile only via initPhotoCapture() -->
+          <button class="pua-camera-btn" id="add-camera-btn"
+                  onclick="document.getElementById('add-camera-input').click()"
+                  type="button">
+            📸 Take Photo with Camera
+          </button>
           <input type="hidden" id="add-photo-data">
           <input type="file" id="add-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">
+          <!-- capture="environment" opens rear camera directly on iOS/Android -->
+          <input type="file" id="add-camera-input" accept="image/*" capture="environment" style="display:none"
                  onchange="handlePhotoFileInput(event,'add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">
         </div>
       </div>
@@ -2701,8 +2711,17 @@
                     style="display:none;flex-shrink:0"
                     onclick="event.stopPropagation();clearPhotoPreview('edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">✕ Remove</button>
           </div>
+          <!-- Camera capture button — shown on mobile only via initPhotoCapture() -->
+          <button class="pua-camera-btn" id="edit-camera-btn"
+                  onclick="document.getElementById('edit-camera-input').click()"
+                  type="button">
+            📸 Take Photo with Camera
+          </button>
           <input type="hidden" id="edit-photo-data">
           <input type="file" id="edit-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">
+          <!-- capture="environment" opens rear camera directly on iOS/Android -->
+          <input type="file" id="edit-camera-input" accept="image/*" capture="environment" style="display:none"
                  onchange="handlePhotoFileInput(event,'edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">
         </div>
       </div>
@@ -6100,54 +6119,96 @@ function runImport() {
   toast('Import complete: ' + added + ' added, ' + updated + ' updated.');
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // MOBILE RESPONSIVE LAYER
-// ═══════════════════════════════════════════════════════════════════════════
+// Handles: bottom nav, more drawer, mobile card views, camera capture
+// ═══════════════════════════════════════════════════════════════════════
 
+// ── Camera / photo capture ───────────────────────────────────────────────
+// Shows the rear-camera button on touch devices. Uses feature detection,
+// not viewport width, so tablets in landscape also get the camera button.
+function initPhotoCapture() {
+  const isTouch = ('ontouchstart' in window) ||
+                  (navigator.maxTouchPoints > 0) ||
+                  window.matchMedia('(pointer: coarse)').matches;
+  if (!isTouch) return;
+
+  ['add-camera-btn', 'edit-camera-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'flex';
+  });
+
+  const addHint = document.getElementById('add-photo-hint');
+  if (addHint) addHint.textContent = 'Tap area to choose from library, or use button below for camera';
+
+  const editHint = document.getElementById('edit-photo-hint');
+  if (editHint) editHint.textContent = 'Tap area to choose from library, or use button below for camera';
+}
+
+// ── MOB — Mobile UI controller ───────────────────────────────────────────
 const MOB = {
-  // True when viewport is ≤768px
+
   get active() { return window.innerWidth <= 768; },
 
-  // Which "more drawer" page is active
-  moreActivePage: null,
+  // Map of page id → bottom-nav tab element id (pages not in map go to 'more' tab)
+  NAV_TAB_MAP: {
+    dashboard: 'mnt-dashboard',
+    inventory: 'mnt-inventory',
+    issue:     'mnt-issue',
+    loans:     'mnt-loans',
+  },
 
-  // Tabs that live in the bottom nav (not the drawer)
-  primaryPages: ['dashboard','inventory','issue','loans'],
+  // Map of page id → more-drawer button element id
+  DRAWER_MAP: {
+    cadets:    'mmd-cadets',
+    stocktake: 'mmd-stocktake',
+    reports:   'mmd-reports',
+    qr:        'mmd-qr',
+    import:    'mmd-import',
+    audit:     'mmd-audit',
+    users:     'mmd-users',
+    settings:  'mmd-settings',
+  },
+
+  // Table-wrap id → card-container id pairs for responsive switching
+  TABLE_PAIRS: [
+    ['inv-table-wrap',       'inv-cards-mob'],
+    ['loans-table-wrap',     'loan-cards-mob'],
+    ['cadets-table-wrap',    'cdt-cards-mob'],
+    ['stocktake-table-wrap', 'stocktake-cards-mob'],
+  ],
 
   init() {
-    // Apply on load and on resize
     this.applyMode();
     window.addEventListener('resize', () => this.applyMode());
-    // Close drawer on outside tap
+
+    // Close the more drawer when tapping outside it
     document.addEventListener('click', e => {
-      const drawer = document.getElementById('mobile-more-drawer');
+      const drawer  = document.getElementById('mobile-more-drawer');
       const moreBtn = document.getElementById('mnt-more');
       if (drawer && drawer.classList.contains('open') &&
-          !drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+          !drawer.contains(e.target) && moreBtn && !moreBtn.contains(e.target)) {
         drawer.classList.remove('open');
         moreBtn.classList.remove('active');
       }
     });
+
+    initPhotoCapture();
   },
 
   applyMode() {
     const fab = document.getElementById('mob-fab-add-item');
     if (this.active) {
       if (fab) fab.style.display = 'flex';
-      // Rerender card views for all data-heavy tabs
+      // Trigger card-view renders for data-heavy tabs
       renderInventory();
       renderLoans();
       renderCadets();
       renderStocktake();
     } else {
       if (fab) fab.style.display = 'none';
-      // Restore desktop table containers, hide card containers
-      [
-        ['inv-table-wrap',        'inv-cards-mob'],
-        ['loans-table-wrap',      'loan-cards-mob'],
-        ['cadets-table-wrap',     'cdt-cards-mob'],
-        ['stocktake-table-wrap',  'stocktake-cards-mob'],
-      ].forEach(([tw, mc]) => {
+      // Restore desktop tables, hide card containers
+      this.TABLE_PAIRS.forEach(([tw, mc]) => {
         const t = document.getElementById(tw);
         const c = document.getElementById(mc);
         if (t) t.style.display = '';
@@ -6156,59 +6217,47 @@ const MOB = {
     }
   },
 
-  // Sync bottom-nav highlight
+  // Highlight the correct bottom-nav tab and drawer button for a given page
   syncNav(pageId) {
-    // Bottom nav tabs
+    // Bottom nav
     document.querySelectorAll('.mn-tab').forEach(t => t.classList.remove('active'));
-    const tabMap = {
-      dashboard: 'mnt-dashboard',
-      inventory: 'mnt-inventory',
-      issue:     'mnt-issue',
-      loans:     'mnt-loans',
-    };
-    const tabId = tabMap[pageId];
+    const tabId = this.NAV_TAB_MAP[pageId];
     if (tabId) {
       const el = document.getElementById(tabId);
       if (el) el.classList.add('active');
     } else {
-      // It's a "more" page — highlight the More tab
       const more = document.getElementById('mnt-more');
       if (more) more.classList.add('active');
     }
-    // More drawer buttons
+
+    // Drawer buttons
     document.querySelectorAll('.mmd-btn').forEach(b => b.classList.remove('active'));
-    const drawerMap = {
-      cadets:    'mmd-cadets',
-      stocktake: 'mmd-stocktake',
-      reports:   'mmd-reports',
-      qr:        'mmd-qr',
-      import:    'mmd-import',
-      audit:     'mmd-audit',
-      users:     'mmd-users',
-      settings:  'mmd-settings',
-    };
-    if (drawerMap[pageId]) {
-      const el = document.getElementById(drawerMap[pageId]);
+    const drawerId = this.DRAWER_MAP[pageId];
+    if (drawerId) {
+      const el = document.getElementById(drawerId);
       if (el) el.classList.add('active');
     }
-    // FAB — only show on inventory page
+
+    // FAB — only visible on Inventory page with addItem permission
     const fab = document.getElementById('mob-fab-add-item');
-    if (fab && this.active) fab.style.display = pageId === 'inventory' ? 'flex' : 'none';
+    if (fab) {
+      const canAdd = AUTH && AUTH.can && AUTH.can('addItem');
+      fab.style.display = (pageId === 'inventory' && canAdd) ? 'flex' : 'none';
+    }
   },
 };
 
-// ── Mobile nav handlers ────────────────────────────────────────────────────
+// ── Bottom-nav and more-drawer handlers ──────────────────────────────────
 function mobileNav(pageId) {
-  // close drawer
   const drawer = document.getElementById('mobile-more-drawer');
   if (drawer) drawer.classList.remove('open');
   showPage(pageId, true);
 }
 
 function mobileNavMore(pageId) {
-  const drawer = document.getElementById('mobile-more-drawer');
-  if (drawer) drawer.classList.remove('open');
+  const drawer  = document.getElementById('mobile-more-drawer');
   const moreBtn = document.getElementById('mnt-more');
+  if (drawer)  drawer.classList.remove('open');
   if (moreBtn) moreBtn.classList.remove('active');
   showPage(pageId, true);
 }
@@ -6221,22 +6270,20 @@ function toggleMoreDrawer() {
   if (moreBtn) moreBtn.classList.toggle('active', isOpen);
 }
 
-// ── Patch renderInventory to also populate mobile cards ───────────────────
+// ── Mobile card view for Inventory ───────────────────────────────────────
 (function patchRenderInventory() {
   const _orig = renderInventory;
   window.renderInventory = function() {
-    _orig();   // always run the table render
-
+    _orig();
     if (!MOB.active) return;
 
     const tw = document.getElementById('inv-table-wrap');
     const mc = document.getElementById('inv-cards-mob');
     if (!tw || !mc) return;
-
     tw.style.display = 'none';
     mc.style.display = 'block';
 
-    const q = document.getElementById('inv-search').value.toLowerCase();
+    const q = (document.getElementById('inv-search')?.value || '').toLowerCase();
     const rows = state.items.filter(i =>
       (!invCatFilter || i.cat === invCatFilter) &&
       (!q || i.name.toLowerCase().includes(q) || i.nsn.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q))
@@ -6252,22 +6299,18 @@ function toggleMoreDrawer() {
     };
 
     mc.innerHTML = rows.map(item => {
-      const realIdx = state.items.indexOf(item);
+      const idx = state.items.indexOf(item);
       const pct = item.authQty > 0 ? Math.round((item.onHand / item.authQty) * 100) : 0;
       const fillClass = pct < 50 ? 'low' : pct < 75 ? 'mid' : '';
-      const thumbHtml = item.photoData
+      const thumb = item.photoData
         ? `<img class="inv-card-thumb" src="${item.photoData}" alt="${item.name}" onclick="triggerPhotoUpload('${item.id}')">`
         : `<div class="inv-card-thumb-ph" onclick="triggerPhotoUpload('${item.id}')">📷</div>`;
       return `<div class="inv-card">
-        ${thumbHtml}
+        ${thumb}
         <div class="inv-card-body">
           <div class="inv-card-nsn">${item.nsn}</div>
           <div class="inv-card-name">${item.name}</div>
-          <div class="inv-card-meta">
-            ${catBadge(item.cat)}
-            ${condBadge(item.condition)}
-            <span class="inv-card-qty" style="color:var(--text-secondary)">Auth: ${item.authQty}</span>
-          </div>
+          <div class="inv-card-meta">${catBadge(item.cat)} ${condBadge(item.condition)} <span class="inv-card-qty" style="color:var(--text-secondary)">Auth: ${item.authQty}</span></div>
           <div class="inv-card-meta" style="margin-top:4px">
             <span class="inv-card-qty">On Hand: <strong style="color:var(--text-primary)">${item.onHand}</strong></span>
             <span class="inv-card-qty" style="color:var(--accent-blue)">On Loan: ${item.onLoan}</span>
@@ -6276,8 +6319,8 @@ function toggleMoreDrawer() {
           <div class="progress-bar" style="margin-top:5px"><div class="fill ${fillClass}" style="width:${pct}%"></div></div>
           ${item.loc ? `<div class="inv-card-loc" style="margin-top:4px">📍 ${item.loc}</div>` : ''}
           <div class="inv-card-actions">
-            <button class="btn btn-secondary btn-sm" onclick="openEditItem(${realIdx})">✏ Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteItem(${realIdx})">🗑 Del</button>
+            <button class="btn btn-secondary btn-sm" onclick="openEditItem(${idx})">✏ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteItem(${idx})">🗑 Del</button>
           </div>
         </div>
       </div>`;
@@ -6285,110 +6328,87 @@ function toggleMoreDrawer() {
   };
 })();
 
-// ── Patch renderLoans to also populate mobile cards ────────────────────────
+// ── Mobile card view for Loans ────────────────────────────────────────────
 (function patchRenderLoans() {
   const _orig = renderLoans;
   window.renderLoans = function() {
     _orig();
-
     if (!MOB.active) return;
 
     const lw = document.getElementById('loans-table-wrap');
     const mc = document.getElementById('loan-cards-mob');
     if (!lw || !mc) return;
-
     lw.style.display = 'none';
     mc.style.display = 'block';
 
-    const today  = new Date().toISOString().slice(0,10);
-    const soon   = new Date(); soon.setDate(soon.getDate() + 7);
-    const soonStr = soon.toISOString().slice(0,10);
-    const filter = document.getElementById('loan-filter').value;
-    const q      = document.getElementById('loan-search').value.toLowerCase();
+    const today   = new Date().toISOString().slice(0, 10);
+    const soon    = new Date(); soon.setDate(soon.getDate() + 7);
+    const soonStr = soon.toISOString().slice(0, 10);
+    const filter  = document.getElementById('loan-filter')?.value || 'all';
+    const q       = (document.getElementById('loan-search')?.value || '').toLowerCase();
 
     let loans = state.loans.filter(l => l.active);
-    if (filter === 'overdue')  loans = loans.filter(l => l.dueDate < today);
-    if (filter === 'due-soon') loans = loans.filter(l => l.dueDate >= today && l.dueDate <= soonStr);
+    if (filter === 'overdue')  loans = loans.filter(l => l.dueDate && l.dueDate < today);
+    if (filter === 'due-soon') loans = loans.filter(l => l.dueDate && l.dueDate >= today && l.dueDate <= soonStr);
     if (q) loans = loans.filter(l =>
       l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) ||
       l.nsn.includes(q) || l.ref.toLowerCase().includes(q));
 
     mc.innerHTML = loans.map(l => {
       const ov = l.dueDate && l.dueDate < today;
-      const ds = l.dueDate && l.dueDate <= soonStr && !ov;
+      const ds = l.dueDate && !ov && l.dueDate <= soonStr;
       const badgeCls = ov ? 'badge-unserviceable' : ds ? 'badge-repair' : 'badge-on-loan';
       const badgeTxt = ov ? 'OVERDUE' : ds ? 'Due Soon' : 'Active';
       return `<div class="loan-mc">
-        <div class="loan-mc-header">
-          <span class="loan-mc-ref">${l.ref}</span>
-          <span class="badge ${badgeCls}">${badgeTxt}</span>
-        </div>
+        <div class="loan-mc-header"><span class="loan-mc-ref">${l.ref}</span><span class="badge ${badgeCls}">${badgeTxt}</span></div>
         <div class="loan-mc-name">${l.itemName}</div>
         <div class="loan-mc-nsn">${l.nsn}</div>
         <div class="loan-mc-row">
-          <div class="loan-mc-field">
-            <div class="loan-mc-label">Borrower</div>
-            <div class="loan-mc-val">${l.borrowerName}</div>
-          </div>
-          <div class="loan-mc-field">
-            <div class="loan-mc-label">Qty</div>
-            <div class="loan-mc-val" style="color:var(--accent-blue)">${l.qty}</div>
-          </div>
-          <div class="loan-mc-field">
-            <div class="loan-mc-label">Issued</div>
-            <div class="loan-mc-val">${l.issueDate}</div>
-          </div>
-          <div class="loan-mc-field">
-            <div class="loan-mc-label">Due</div>
-            <div class="loan-mc-val ${ov ? 'text-red' : ''}">${l.dueDate || '—'}</div>
-          </div>
+          <div class="loan-mc-field"><div class="loan-mc-label">Borrower</div><div class="loan-mc-val">${l.borrowerName}</div></div>
+          <div class="loan-mc-field"><div class="loan-mc-label">Qty</div><div class="loan-mc-val" style="color:var(--accent-blue)">${l.qty}</div></div>
+          <div class="loan-mc-field"><div class="loan-mc-label">Issued</div><div class="loan-mc-val">${l.issueDate}</div></div>
+          <div class="loan-mc-field"><div class="loan-mc-label">Due</div><div class="loan-mc-val ${ov ? 'text-red' : ''}">${l.dueDate || '—'}</div></div>
         </div>
-        <div class="loan-mc-actions">
-          <button class="btn btn-amber" onclick="quickReturn('${l.ref}')">↩ Mark Returned</button>
-        </div>
+        <div class="loan-mc-actions"><button class="btn btn-amber" onclick="quickReturn('${l.ref}')">↩ Mark Returned</button></div>
       </div>`;
     }).join('') || `<div style="text-align:center;color:var(--text-dim);padding:32px;font-family:var(--mono);font-size:12px;">No active loans match filter.</div>`;
   };
 })();
 
-// ── Patch renderCadets to also populate mobile cards ──────────────────────
+// ── Mobile card view for Personnel ───────────────────────────────────────
 (function patchRenderCadets() {
   const _orig = renderCadets;
   window.renderCadets = function() {
     _orig();
-
     if (!MOB.active) return;
 
     const cw = document.getElementById('cadets-table-wrap');
     const mc = document.getElementById('cdt-cards-mob');
     if (!cw || !mc) return;
-
     cw.style.display = 'none';
     mc.style.display = 'block';
 
-    const q          = document.getElementById('cadet-search').value.toLowerCase();
+    const q          = (document.getElementById('cadet-search')?.value || '').toLowerCase();
     const typeFilter = document.getElementById('cadet-type-filter')?.value || '';
     const rows = state.cadets.filter(c => {
       if (typeFilter && (c.personType || 'cadet') !== typeFilter) return false;
       return !q || `${c.svcNo} ${c.rank} ${c.surname} ${c.given} ${c.plt} ${c.email||''}`.toLowerCase().includes(q);
     });
-
-    const hasAccount = svc => (state.users||[]).some(u => u.svcNo === svc);
+    const hasAccount = svc => (state.users || []).some(u => u.svcNo === svc);
 
     mc.innerHTML = rows.map(c => {
-      const loans    = state.loans.filter(l => l.active && l.borrowerSvc === c.svcNo).length;
-      const acct     = hasAccount(c.svcNo);
-      const isStaff  = (c.personType || 'cadet') === 'staff';
+      const loans   = state.loans.filter(l => l.active && l.borrowerSvc === c.svcNo).length;
+      const acct    = hasAccount(c.svcNo);
+      const isStaff = (c.personType || 'cadet') === 'staff';
       const typeBadge = isStaff
         ? `<span class="badge" style="background:rgba(212,147,10,0.2);border:1px solid var(--accent-amber);color:var(--accent-amber)">STAFF</span>`
         : `<span class="badge badge-cat1">CDT</span>`;
-      const initials = `${c.rank}`;
       return `<div class="cdt-mc">
         <div class="cdt-mc-header">
-          <div class="cdt-mc-avatar">${initials}</div>
+          <div class="cdt-mc-avatar">${c.rank}</div>
           <div>
             <div class="cdt-mc-name">${c.rank} ${c.surname}, ${c.given}</div>
-            <div class="cdt-mc-sub">${c.svcNo}${c.plt ? ' · ' + c.plt : ''} · ${typeBadge}</div>
+            <div class="cdt-mc-sub">${c.svcNo}${c.plt ? ' · '+c.plt : ''} · ${typeBadge}</div>
           </div>
           ${loans > 0 ? `<span class="badge badge-on-loan" style="margin-left:auto">${loans} loan${loans>1?'s':''}</span>` : ''}
         </div>
@@ -6399,9 +6419,8 @@ function toggleMoreDrawer() {
           ${c.email   ? `<span class="cdt-mc-sz" style="color:var(--text-secondary)">${c.email}</span>` : ''}
         </div>
         <div style="margin-top:6px">
-          ${acct
-            ? `<span class="badge badge-serviceable">● Active Login</span>`
-            : `<span class="badge" style="background:rgba(90,90,72,0.3);border:1px solid var(--text-dim);color:var(--text-dim)">No Login</span>`}
+          ${acct ? `<span class="badge badge-serviceable">● Active Login</span>`
+                 : `<span class="badge" style="background:rgba(90,90,72,0.3);border:1px solid var(--text-dim);color:var(--text-dim)">No Login</span>`}
         </div>
         <div class="cdt-mc-actions">
           <button class="btn btn-secondary btn-sm" onclick="openEditCadet('${c.svcNo}')">✏ Edit</button>
@@ -6413,18 +6432,16 @@ function toggleMoreDrawer() {
   };
 })();
 
-// ── Patch renderStocktake for mobile card view ────────────────────────────
+// ── Mobile card view for Stocktake ───────────────────────────────────────
 (function patchRenderStocktake() {
   const _orig = renderStocktake;
   window.renderStocktake = function() {
     _orig();
-
     if (!MOB.active) return;
 
     const tw = document.getElementById('stocktake-table-wrap');
     const mc = document.getElementById('stocktake-cards-mob');
     if (!tw || !mc) return;
-
     tw.style.display = 'none';
     mc.style.display = 'block';
 
@@ -6432,38 +6449,28 @@ function toggleMoreDrawer() {
     const items = state.items.filter(i => !catFilter || i.cat === catFilter);
 
     mc.innerHTML = items.map(item => {
-      const counted = _stocktakeSession?.[item.id];
-      const countedVal = counted !== undefined && counted !== '' ? parseInt(counted) : '';
-      const variance = countedVal !== '' ? countedVal - item.onHand : null;
-      const varStyle = variance === null ? '' :
+      const counted    = _stocktakeSession?.[item.id];
+      const countedVal = (counted !== undefined && counted !== '') ? parseInt(counted) : '';
+      const variance   = countedVal !== '' ? countedVal - item.onHand : null;
+      const varStyle   = variance === null ? '' :
         variance < 0 ? 'background:rgba(192,57,43,0.15);color:var(--accent-red)' :
         variance > 0 ? 'background:rgba(212,147,10,0.15);color:var(--accent-amber)' :
                        'background:rgba(39,174,96,0.12);color:var(--accent-green)';
       const varText = variance === null ? '—' : (variance >= 0 ? '+' : '') + variance;
-
+      const catCls  = item.cat==='Safety'?'badge-cat3':item.cat==='Equipment'?'badge-cat2':item.cat==='ICT'?'badge-cat-ict':'badge-cat1';
       return `<div class="st-mc">
         <div class="st-mc-name">${item.name}</div>
-        <div class="st-mc-nsn">${item.nsn} · <span class="badge badge-cat1" style="font-size:9px">${item.cat}</span></div>
+        <div class="st-mc-nsn">${item.nsn} · <span class="badge ${catCls}" style="font-size:9px">${item.cat}</span></div>
         <div class="st-mc-qtys">
-          <div class="st-mc-qty">
-            <div class="st-mc-qlbl">Auth</div>
-            <div class="st-mc-qval" style="color:var(--text-secondary)">${item.authQty}</div>
-          </div>
-          <div class="st-mc-qty">
-            <div class="st-mc-qlbl">System</div>
-            <div class="st-mc-qval">${item.onHand}</div>
-          </div>
-          <div class="st-mc-qty">
-            <div class="st-mc-qlbl">On Loan</div>
-            <div class="st-mc-qval" style="color:var(--accent-blue)">${item.onLoan}</div>
-          </div>
+          <div class="st-mc-qty"><div class="st-mc-qlbl">Auth</div><div class="st-mc-qval" style="color:var(--text-secondary)">${item.authQty}</div></div>
+          <div class="st-mc-qty"><div class="st-mc-qlbl">System</div><div class="st-mc-qval">${item.onHand}</div></div>
+          <div class="st-mc-qty"><div class="st-mc-qlbl">On Loan</div><div class="st-mc-qval" style="color:var(--accent-blue)">${item.onLoan}</div></div>
         </div>
         <div class="st-mc-inputs">
           <div class="st-mc-count-wrap">
             <label class="form-label">Physical Count</label>
             <input type="number" class="form-input" min="0" inputmode="numeric"
-              value="${countedVal}"
-              placeholder="Count"
+              value="${countedVal}" placeholder="Count"
               oninput="stocktakeCountChanged('${item.id}', this.value)">
           </div>
           <div>
@@ -6476,40 +6483,42 @@ function toggleMoreDrawer() {
             </select>
           </div>
         </div>
-        <div class="st-mc-variance" style="${varStyle}">
-          Variance: ${varText}
-        </div>
+        <div class="st-mc-variance" style="${varStyle}">Variance: ${varText}</div>
         <div style="margin-top:8px">
           <label class="form-label">Notes</label>
-          <input type="text" class="form-input" placeholder="Notes…"
-            id="st-note-${item.id}" value="">
+          <input type="text" class="form-input" id="st-note-${item.id}" placeholder="Notes…" value="">
         </div>
       </div>`;
     }).join('') || `<div style="text-align:center;color:var(--text-dim);padding:32px;font-family:var(--mono);font-size:12px;">No items to count.</div>`;
   };
 })();
+
+// ── Patch renderAll: sync mobile nav + re-gate drawer permissions ─────────
 (function patchRenderAll() {
   const _orig = renderAll;
   window.renderAll = function() {
     _orig();
     if (MOB.active) {
-      // Sync the current visible page highlight
       const activePage = document.querySelector('.page.active');
-      if (activePage) {
-        const id = activePage.id.replace('page-', '');
-        MOB.syncNav(id);
-      }
-      // Re-apply permissions to mobile drawer after every full render
+      if (activePage) MOB.syncNav(activePage.id.replace('page-', ''));
       applyPermissionsToUI();
     }
   };
 })();
 
-// Kick off mobile init after DOM is ready
+// ── Patch openModal: re-run camera detection when modals open ─────────────
+(function patchOpenModal() {
+  const _orig = openModal;
+  window.openModal = function(id) {
+    _orig(id);
+    initPhotoCapture();
+  };
+})();
+
+// ── Bootstrap ────────────────────────────────────────────────────────────
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => MOB.init());
 } else {
-  // Already loaded — init on next tick so all functions are defined
   setTimeout(() => MOB.init(), 0);
 }
 </script>
