@@ -528,6 +528,22 @@
   }
   .photo-upload-area .pua-hint { font-size: 11px; color: var(--text-dim); }
 
+  /* Mobile camera capture button — hidden on desktop, shown by JS on mobile */
+  .pua-camera-btn {
+    display: none;   /* shown via JS when on mobile */
+    align-items: center; justify-content: center; gap: 6px;
+    margin-top: 8px; width: 100%;
+    padding: 10px 14px;
+    background: rgba(59,74,47,0.4);
+    border: 1px solid var(--tan);
+    color: var(--tan);
+    font-family: var(--display); font-weight: 700;
+    font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pua-camera-btn:active { background: rgba(196,169,107,0.2); }
+
   .data-table .qty-cell {
     font-family: var(--mono);
     font-weight: bold;
@@ -1374,7 +1390,6 @@
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
           <option value="ICT">ICT</option>
-          <option value="ICT">ICT</option>
         </select>
         <button class="btn btn-primary btn-sm" id="add-item-btn" onclick="openModal('modal-add-item')">+ Add Item</button>
       </div>
@@ -1764,6 +1779,7 @@
           <option value="Training Aids">Training Aids</option>
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
+          <option value="ICT">ICT</option>
         </select>
         <button class="btn btn-secondary btn-sm" onclick="renderStocktake()">↺ Refresh</button>
         <button class="btn btn-amber" onclick="clearStocktakeCounts()">Clear All Counts</button>
@@ -2451,14 +2467,23 @@
             <img id="add-photo-preview" class="pua-preview" src="" alt="" style="display:none">
             <div class="pua-info">
               <div class="pua-label">📷 Upload Photo</div>
-              <div class="pua-hint">Click or drag &amp; drop — JPG / PNG / WEBP<br>Will be resized to 120×120 and synced to OneDrive</div>
+              <div class="pua-hint" id="add-photo-hint">Click or drag &amp; drop — JPG / PNG / WEBP<br>Will be resized to 120×120 and synced to OneDrive</div>
             </div>
             <button class="btn btn-secondary btn-sm" id="add-photo-clear-btn"
                     style="display:none;flex-shrink:0"
                     onclick="event.stopPropagation();clearPhotoPreview('add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">✕ Clear</button>
           </div>
+          <!-- Camera capture button — shown on mobile only via initPhotoCapture() -->
+          <button class="pua-camera-btn" id="add-camera-btn"
+                  onclick="document.getElementById('add-camera-input').click()"
+                  type="button">
+            📸 Take Photo with Camera
+          </button>
           <input type="hidden" id="add-photo-data">
           <input type="file" id="add-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">
+          <!-- capture="environment" opens rear camera directly on iOS/Android -->
+          <input type="file" id="add-camera-input" accept="image/*" capture="environment" style="display:none"
                  onchange="handlePhotoFileInput(event,'add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data')">
         </div>
       </div>
@@ -2701,8 +2726,17 @@
                     style="display:none;flex-shrink:0"
                     onclick="event.stopPropagation();clearPhotoPreview('edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">✕ Remove</button>
           </div>
+          <!-- Camera capture button — shown on mobile only via initPhotoCapture() -->
+          <button class="pua-camera-btn" id="edit-camera-btn"
+                  onclick="document.getElementById('edit-camera-input').click()"
+                  type="button">
+            📸 Take Photo with Camera
+          </button>
           <input type="hidden" id="edit-photo-data">
           <input type="file" id="edit-photo-input" accept="image/*" style="display:none"
+                 onchange="handlePhotoFileInput(event,'edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">
+          <!-- capture="environment" opens rear camera directly on iOS/Android -->
+          <input type="file" id="edit-camera-input" accept="image/*" capture="environment" style="display:none"
                  onchange="handlePhotoFileInput(event,'edit-photo-preview','edit-photo-area','edit-photo-clear-btn','edit-photo-data')">
         </div>
       </div>
@@ -6104,7 +6138,45 @@ function runImport() {
 // MOBILE RESPONSIVE LAYER
 // ═══════════════════════════════════════════════════════════════════════════
 
-const MOB = {
+// ── initPhotoCapture ──────────────────────────────────────────────────────
+// Shows the "Take Photo with Camera" button on touch/mobile devices.
+// Uses feature detection rather than viewport width alone — a tablet in
+// landscape may be >768px but still have a camera.
+function initPhotoCapture() {
+  // Show if device has a camera or is a touch device (coarse pointer / touch events)
+  const isMobileOrTablet =
+    window.innerWidth <= 1024 ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    window.matchMedia('(pointer: coarse)').matches;
+
+  if (!isMobileOrTablet) return;
+
+  // Make camera buttons visible
+  ['add-camera-btn', 'edit-camera-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'flex';
+  });
+
+  // On mobile, also update the upload-area hint text to clarify two options exist
+  const addHint = document.getElementById('add-photo-hint');
+  if (addHint) addHint.innerHTML = 'Tap to choose from library — or use button below to photograph item';
+
+  const editHint = document.getElementById('edit-photo-hint');
+  if (editHint) editHint.innerHTML = 'Tap to choose from library — or use button below to photograph item';
+}
+
+// Re-run initPhotoCapture whenever a modal opens so dynamically inserted
+// modals also get the camera button treatment.
+const _origOpenModal = window.openModal;
+if (typeof _origOpenModal === 'function') {
+  window.openModal = function(id) {
+    _origOpenModal(id);
+    initPhotoCapture();
+  };
+}
+
+
   // True when viewport is ≤768px
   get active() { return window.innerWidth <= 768; },
 
@@ -6128,6 +6200,8 @@ const MOB = {
         moreBtn.classList.remove('active');
       }
     });
+    // Show camera buttons if on a touch/mobile device
+    initPhotoCapture();
   },
 
   applyMode() {
