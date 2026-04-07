@@ -981,8 +981,34 @@
     /* ── Cadet info box on issue page ── */
     .cadet-info-box { grid-template-columns: 1fr 1fr; }
 
-    /* ── QR / label grid ── */
-    .label-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    /* ── Stocktake mobile cards ── */
+    #stocktake-table-wrap { display: none; }
+    #stocktake-cards-mob  { display: block; }
+    .st-mc {
+      background: var(--panel-bg); border: 1px solid var(--panel-border);
+      padding: 12px; margin-bottom: 8px;
+    }
+    .st-mc-name  { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .st-mc-nsn   { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-bottom: 6px; }
+    .st-mc-qtys  { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .st-mc-qty   { flex: 1; min-width: 60px; }
+    .st-mc-qlbl  { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+    .st-mc-qval  { font-family: var(--mono); font-size: 15px; font-weight: bold; color: var(--text-primary); margin-top: 2px; }
+    .st-mc-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .st-mc-count-wrap input { font-size: 18px !important; font-weight: bold; text-align: center; }
+    .st-mc-variance { font-family: var(--mono); font-size: 13px; font-weight: bold; padding: 6px 10px; text-align: center; border-radius: 2px; margin-top: 6px; }
+
+    /* ── QR page two-col → single on mobile ── */
+    #page-qr .two-col { grid-template-columns: 1fr; }
+
+    /* ── Settings panels ── */
+    #page-settings .form-grid.cols-2 { grid-template-columns: 1fr; }
+
+    /* ── Reports stat cards ── */
+    #page-reports .stats-grid { grid-template-columns: 1fr 1fr; }
+
+    /* ── Table: stocktake cards visible ── */
+    #stocktake-cards-mob { display: block; }
 
     /* ── Print overlay toolbar ── */
     .plo-toolbar { gap: 6px; }
@@ -1180,15 +1206,16 @@
   <nav>
     <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
     <button class="nav-tab" onclick="showPage('inventory')">Inventory Register</button>
-    <button class="nav-tab" id="nav-issue"   onclick="showPage('issue')">Issue / Return</button>
+    <button class="nav-tab" id="nav-issue"     onclick="showPage('issue')">Issue / Return</button>
     <button class="nav-tab" onclick="showPage('loans')">Active Loans</button>
-    <button class="nav-tab" id="nav-cadets"  onclick="showPage('cadets')">Cadet Register</button>
+    <button class="nav-tab" id="nav-cadets"    onclick="showPage('cadets')">Cadet Register</button>
+    <button class="nav-tab" id="nav-stocktake" onclick="showPage('stocktake')">Stocktake</button>
     <button class="nav-tab" onclick="showPage('reports')">Reports & DA Forms</button>
     <button class="nav-tab" onclick="showPage('qr')">QR / Labels</button>
-    <button class="nav-tab" id="nav-import"  onclick="showPage('import')">CSV Import</button>
+    <button class="nav-tab" id="nav-import"    onclick="showPage('import')">CSV Import</button>
     <button class="nav-tab" onclick="showPage('audit')">Audit Log</button>
-    <button class="nav-tab" id="nav-users"   onclick="showPage('users')">Users</button>
-    <button class="nav-tab" id="nav-settings" onclick="showPage('settings')">Settings</button>
+    <button class="nav-tab" id="nav-users"     onclick="showPage('users')">Users</button>
+    <button class="nav-tab" id="nav-settings"  onclick="showPage('settings')">Settings</button>
   </nav>
 </header>
 
@@ -1217,25 +1244,28 @@
 <div id="mobile-more-drawer">
   <div class="mmd-title">More Sections</div>
   <div class="mmd-grid">
-    <button class="mmd-btn" id="mmd-cadets"   onclick="mobileNavMore('cadets')">
+    <button class="mmd-btn" id="mmd-cadets"     onclick="mobileNavMore('cadets')">
       <span class="mmd-icon">👥</span>Personnel
     </button>
-    <button class="mmd-btn" id="mmd-reports"  onclick="mobileNavMore('reports')">
+    <button class="mmd-btn" id="mmd-stocktake"  onclick="mobileNavMore('stocktake')">
+      <span class="mmd-icon">📋</span>Stocktake
+    </button>
+    <button class="mmd-btn" id="mmd-reports"    onclick="mobileNavMore('reports')">
       <span class="mmd-icon">📄</span>Reports
     </button>
-    <button class="mmd-btn" id="mmd-qr"       onclick="mobileNavMore('qr')">
+    <button class="mmd-btn" id="mmd-qr"         onclick="mobileNavMore('qr')">
       <span class="mmd-icon">⬛</span>QR Labels
     </button>
-    <button class="mmd-btn" id="mmd-import"   onclick="mobileNavMore('import')">
+    <button class="mmd-btn" id="mmd-import"     onclick="mobileNavMore('import')">
       <span class="mmd-icon">📥</span>CSV Import
     </button>
-    <button class="mmd-btn" id="mmd-audit"    onclick="mobileNavMore('audit')">
+    <button class="mmd-btn" id="mmd-audit"      onclick="mobileNavMore('audit')">
       <span class="mmd-icon">🗒</span>Audit Log
     </button>
-    <button class="mmd-btn" id="mmd-users"    onclick="mobileNavMore('users')">
+    <button class="mmd-btn" id="mmd-users"      onclick="mobileNavMore('users')">
       <span class="mmd-icon">🔑</span>Users
     </button>
-    <button class="mmd-btn" id="mmd-settings" onclick="mobileNavMore('settings')">
+    <button class="mmd-btn" id="mmd-settings"   onclick="mobileNavMore('settings')">
       <span class="mmd-icon">⚙</span>Settings
     </button>
   </div>
@@ -1376,8 +1406,11 @@
         </table>
       </div><!-- /inv-table-wrap -->
       <div id="inv-cards-mob" style="display:none"></div>
+    </div><!-- /panel-body -->
+  </div><!-- /panel -->
+</div><!-- /page-inventory -->
 
-<!-- Mobile FAB: Add Item -->
+<!-- Mobile FAB: Add Item (fixed position — lives outside all pages) -->
 <button id="mob-fab-add-item" onclick="openModal('modal-add-item')"
   style="display:none;position:fixed;bottom:74px;right:16px;z-index:195;
   width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
@@ -1385,6 +1418,8 @@
   box-shadow:0 4px 16px rgba(0,0,0,0.5);align-items:center;justify-content:center;
   font-family:var(--display);font-weight:900;-webkit-tap-highlight-color:transparent;"
   aria-label="Add Item">+</button>
+
+<!-- ====== ISSUE / RETURN ====== -->
 <div id="page-issue" class="page">
   <!-- QM / Staff panel -->
   <div id="issue-panel-qm">
@@ -1661,6 +1696,11 @@
         </table>
       </div><!-- /loans-table-wrap -->
       <div id="loan-cards-mob" style="display:none"></div>
+    </div><!-- /panel-body -->
+  </div><!-- /panel -->
+</div><!-- /page-loans -->
+
+<!-- ====== PERSONNEL REGISTER ====== -->
 <div id="page-cadets" class="page">
   <div class="panel">
     <div class="panel-header">
@@ -1713,9 +1753,9 @@
     Enter the physical count for each item. Variance is calculated automatically. When complete, click <strong>Finalise Stocktake</strong> to update on-hand quantities and generate the stocktake report for QM/CO signature.
   </div>
   <div class="panel">
-    <div class="panel-header">
+    <div class="panel-header" style="flex-wrap:wrap;gap:8px;">
       <span class="panel-title">Physical Count Entry</span>
-      <div class="flex-row" style="gap:8px">
+      <div class="flex-row" style="gap:8px;flex-wrap:wrap;">
         <select class="form-select" id="stocktake-cat-filter" style="width:150px;padding:5px 8px;font-size:12px;" onchange="renderStocktake()">
           <option value="">All Categories</option>
           <option value="Uniform">Uniform</option>
@@ -1731,7 +1771,7 @@
       </div>
     </div>
     <div class="panel-body">
-      <div style="overflow-x:auto;">
+      <div id="stocktake-table-wrap" style="overflow-x:auto;">
         <table class="data-table" id="stocktake-table">
           <thead>
             <tr>
@@ -1749,7 +1789,8 @@
           </thead>
           <tbody id="stocktake-tbody"></tbody>
         </table>
-      </div>
+      </div><!-- /stocktake-table-wrap -->
+      <div id="stocktake-cards-mob" style="display:none"></div>
       <div id="stocktake-summary" class="mt-12" style="display:none">
         <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
           <div class="stat-card ok"><div class="stat-label">Lines Counted</div><div class="stat-value" id="st-counted">0</div></div>
@@ -3286,25 +3327,46 @@ function updateSessionBar() {
 function applyPermissionsToUI() {
   if (!AUTH.session) return;
   const show = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis ? '' : 'none'; };
-  show('nav-issue',    AUTH.can('issue') || AUTH.can('requestIssue'));
-  show('nav-cadets',   AUTH.can('manageCadets'));
-  show('nav-import',   AUTH.can('import'));
-  show('nav-stocktake', AUTH.can('editItem'));
-  show('nav-users',    AUTH.isAdmin());
-  show('nav-settings', AUTH.isCO());
-  // CO-only emergency panel on Users page
+
+  // ── Desktop nav tabs ──────────────────────────────────────────────────
+  show('nav-issue',      AUTH.can('issue') || AUTH.can('requestIssue'));
+  show('nav-cadets',     AUTH.can('manageCadets'));
+  show('nav-import',     AUTH.can('import'));
+  show('nav-stocktake',  AUTH.can('editItem'));
+  show('nav-users',      AUTH.isAdmin());
+  show('nav-settings',   AUTH.isCO());
+
+  // ── Mobile drawer buttons (mirror desktop permissions exactly) ────────
+  show('mmd-cadets',     AUTH.can('manageCadets'));
+  show('mmd-stocktake',  AUTH.can('editItem'));
+  show('mmd-import',     AUTH.can('import'));
+  show('mmd-users',      AUTH.isAdmin());
+  show('mmd-settings',   AUTH.isCO());
+  // These are always visible in the drawer (no permission gate on desktop either)
+  show('mmd-reports',    true);
+  show('mmd-qr',         true);
+  show('mmd-audit',      true);
+
+  // ── Mobile bottom-nav Issue tab ───────────────────────────────────────
+  const mnIssue = document.getElementById('mnt-issue');
+  if (mnIssue) mnIssue.style.display = (AUTH.can('issue') || AUTH.can('requestIssue')) ? '' : 'none';
+
+  // ── CO-only emergency panel on Users page ────────────────────────────
   show('co-access-panel', AUTH.isCO());
-  // Issue page panels
-  const qmPanel     = document.getElementById('issue-panel-qm');
-  const cadetPanel  = document.getElementById('issue-panel-cadet');
+
+  // ── Issue page panels ─────────────────────────────────────────────────
+  const qmPanel    = document.getElementById('issue-panel-qm');
+  const cadetPanel = document.getElementById('issue-panel-cadet');
   if (qmPanel)    qmPanel.style.display    = AUTH.can('issue') ? '' : 'none';
-  // AB189 request panel visible to everyone (all roles can request)
   if (cadetPanel) cadetPanel.style.display = AUTH.can('requestIssue') ? '' : 'none';
-  // Inventory action buttons
+
+  // ── Inventory action buttons ──────────────────────────────────────────
   document.querySelectorAll('.inv-edit-btn').forEach(b => b.style.display = AUTH.can('editItem') ? '' : 'none');
   document.querySelectorAll('.inv-del-btn').forEach(b  => b.style.display = AUTH.isCO() ? '' : 'none');
   const addBtn = document.getElementById('add-item-btn');
   if (addBtn) addBtn.style.display = AUTH.can('addItem') ? '' : 'none';
+  const fabBtn = document.getElementById('mob-fab-add-item');
+  if (fabBtn && MOB && MOB.active) fabBtn.style.display = AUTH.can('addItem') ? 'flex' : 'none';
 }
 
 // =====================================================================
@@ -3823,8 +3885,13 @@ function showPage(id, fromMobile) {
   // Refresh page-specific content
   if (id === 'issue')     { populateRequestItems(); renderCadetOwnLoans(); issuePurposeChanged(); }
   if (id === 'stocktake') { renderStocktake(); }
-  if (id === 'users')  { renderUsers(); }
-  if (id === 'qr')     { renderQrList(); }
+  if (id === 'loans')     { renderLoans(); }
+  if (id === 'cadets')    { renderCadets(); }
+  if (id === 'audit')     { renderAudit(); }
+  if (id === 'reports')   { /* static content, nothing to refresh */ }
+  if (id === 'users')     { renderUsers(); }
+  if (id === 'qr')        { renderQrList(); }
+  if (id === 'dashboard') { renderStats(); renderAlerts(); }
   // Mobile sync
   if (typeof MOB !== 'undefined' && MOB.active) {
     MOB.syncNav(id);
@@ -6066,27 +6133,26 @@ const MOB = {
   applyMode() {
     const fab = document.getElementById('mob-fab-add-item');
     if (this.active) {
-      // Show mobile nav
       if (fab) fab.style.display = 'flex';
-      // Rerender card views
+      // Rerender card views for all data-heavy tabs
       renderInventory();
       renderLoans();
       renderCadets();
+      renderStocktake();
     } else {
       if (fab) fab.style.display = 'none';
-      // Make sure desktop table containers visible
-      const tw = document.getElementById('inv-table-wrap');
-      const lw = document.getElementById('loans-table-wrap');
-      const cw = document.getElementById('cadets-table-wrap');
-      const ic = document.getElementById('inv-cards-mob');
-      const lc = document.getElementById('loan-cards-mob');
-      const cc = document.getElementById('cdt-cards-mob');
-      if (tw) tw.style.display = '';
-      if (lw) lw.style.display = '';
-      if (cw) cw.style.display = '';
-      if (ic) ic.style.display = 'none';
-      if (lc) lc.style.display = 'none';
-      if (cc) cc.style.display = 'none';
+      // Restore desktop table containers, hide card containers
+      [
+        ['inv-table-wrap',        'inv-cards-mob'],
+        ['loans-table-wrap',      'loan-cards-mob'],
+        ['cadets-table-wrap',     'cdt-cards-mob'],
+        ['stocktake-table-wrap',  'stocktake-cards-mob'],
+      ].forEach(([tw, mc]) => {
+        const t = document.getElementById(tw);
+        const c = document.getElementById(mc);
+        if (t) t.style.display = '';
+        if (c) c.style.display = 'none';
+      });
     }
   },
 
@@ -6112,9 +6178,14 @@ const MOB = {
     // More drawer buttons
     document.querySelectorAll('.mmd-btn').forEach(b => b.classList.remove('active'));
     const drawerMap = {
-      cadets: 'mmd-cadets', reports: 'mmd-reports', qr: 'mmd-qr',
-      import: 'mmd-import', audit: 'mmd-audit', users: 'mmd-users',
-      settings: 'mmd-settings',
+      cadets:    'mmd-cadets',
+      stocktake: 'mmd-stocktake',
+      reports:   'mmd-reports',
+      qr:        'mmd-qr',
+      import:    'mmd-import',
+      audit:     'mmd-audit',
+      users:     'mmd-users',
+      settings:  'mmd-settings',
     };
     if (drawerMap[pageId]) {
       const el = document.getElementById(drawerMap[pageId]);
@@ -6342,7 +6413,81 @@ function toggleMoreDrawer() {
   };
 })();
 
-// ── Patch renderAll to trigger mobile mode check ───────────────────────────
+// ── Patch renderStocktake for mobile card view ────────────────────────────
+(function patchRenderStocktake() {
+  const _orig = renderStocktake;
+  window.renderStocktake = function() {
+    _orig();
+
+    if (!MOB.active) return;
+
+    const tw = document.getElementById('stocktake-table-wrap');
+    const mc = document.getElementById('stocktake-cards-mob');
+    if (!tw || !mc) return;
+
+    tw.style.display = 'none';
+    mc.style.display = 'block';
+
+    const catFilter = document.getElementById('stocktake-cat-filter')?.value || '';
+    const items = state.items.filter(i => !catFilter || i.cat === catFilter);
+
+    mc.innerHTML = items.map(item => {
+      const counted = _stocktakeSession?.[item.id];
+      const countedVal = counted !== undefined && counted !== '' ? parseInt(counted) : '';
+      const variance = countedVal !== '' ? countedVal - item.onHand : null;
+      const varStyle = variance === null ? '' :
+        variance < 0 ? 'background:rgba(192,57,43,0.15);color:var(--accent-red)' :
+        variance > 0 ? 'background:rgba(212,147,10,0.15);color:var(--accent-amber)' :
+                       'background:rgba(39,174,96,0.12);color:var(--accent-green)';
+      const varText = variance === null ? '—' : (variance >= 0 ? '+' : '') + variance;
+
+      return `<div class="st-mc">
+        <div class="st-mc-name">${item.name}</div>
+        <div class="st-mc-nsn">${item.nsn} · <span class="badge badge-cat1" style="font-size:9px">${item.cat}</span></div>
+        <div class="st-mc-qtys">
+          <div class="st-mc-qty">
+            <div class="st-mc-qlbl">Auth</div>
+            <div class="st-mc-qval" style="color:var(--text-secondary)">${item.authQty}</div>
+          </div>
+          <div class="st-mc-qty">
+            <div class="st-mc-qlbl">System</div>
+            <div class="st-mc-qval">${item.onHand}</div>
+          </div>
+          <div class="st-mc-qty">
+            <div class="st-mc-qlbl">On Loan</div>
+            <div class="st-mc-qval" style="color:var(--accent-blue)">${item.onLoan}</div>
+          </div>
+        </div>
+        <div class="st-mc-inputs">
+          <div class="st-mc-count-wrap">
+            <label class="form-label">Physical Count</label>
+            <input type="number" class="form-input" min="0" inputmode="numeric"
+              value="${countedVal}"
+              placeholder="Count"
+              oninput="stocktakeCountChanged('${item.id}', this.value)">
+          </div>
+          <div>
+            <label class="form-label">Condition</label>
+            <select class="form-select" id="st-cond-${item.id}">
+              <option value="serviceable"   ${item.condition==='serviceable'   ?'selected':''}>Serviceable</option>
+              <option value="unserviceable" ${item.condition==='unserviceable' ?'selected':''}>Unserviceable</option>
+              <option value="repair"        ${item.condition==='repair'        ?'selected':''}>Repair</option>
+              <option value="written-off"   ${item.condition==='written-off'   ?'selected':''}>Written Off</option>
+            </select>
+          </div>
+        </div>
+        <div class="st-mc-variance" style="${varStyle}">
+          Variance: ${varText}
+        </div>
+        <div style="margin-top:8px">
+          <label class="form-label">Notes</label>
+          <input type="text" class="form-input" placeholder="Notes…"
+            id="st-note-${item.id}" value="">
+        </div>
+      </div>`;
+    }).join('') || `<div style="text-align:center;color:var(--text-dim);padding:32px;font-family:var(--mono);font-size:12px;">No items to count.</div>`;
+  };
+})();
 (function patchRenderAll() {
   const _orig = renderAll;
   window.renderAll = function() {
@@ -6354,6 +6499,8 @@ function toggleMoreDrawer() {
         const id = activePage.id.replace('page-', '');
         MOB.syncNav(id);
       }
+      // Re-apply permissions to mobile drawer after every full render
+      applyPermissionsToUI();
     }
   };
 })();
