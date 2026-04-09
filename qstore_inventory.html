@@ -1613,7 +1613,7 @@
       <div class="panel-body">
         <div class="alert-box info mb-12">
           <div class="alert-title">AB189 — Equipment Request</div>
-          Submit an AB189 request for equipment issue. Your QM and CO/OC will be notified by email. You will be contacted once the request is approved or denied.
+          Submit an AB189 request for equipment issue. Your QM and CO/OC will be notified by email where configured. If email is unavailable, use <strong>Print AB189</strong> to generate a signed paper copy to hand to your QM.
         </div>
         <div class="form-grid cols-2">
           <div class="form-group" style="grid-column:1/-1">
@@ -1641,8 +1641,9 @@
             <textarea class="form-textarea" id="req-remarks-cadet" placeholder="Reason for request, special requirements..."></textarea>
           </div>
         </div>
-        <div class="mt-12">
+        <div class="mt-12 flex-row" style="gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="submitIssueRequest()">Submit Request</button>
+          <button class="btn btn-secondary" onclick="printAB189Form()">⎙ Print AB189</button>
         </div>
       </div>
     </div>
@@ -3595,6 +3596,201 @@ function _sendAB189Email(req) {
   document.body.removeChild(a);
 }
 
+// ── AB189 PDF Print Functions ─────────────────────────────────────────────
+// printAB189Form()   — prints from the current form values (before submission)
+// printAB189ById()   — prints a previously submitted request by ID
+// _generateAB189PDF() — shared PDF builder using jsPDF text API
+
+function printAB189Form() {
+  const itemId  = document.getElementById('req-item').value;
+  const qty     = parseInt(document.getElementById('req-qty').value) || 1;
+  const purpose = document.getElementById('req-purpose').value;
+  const remarks = document.getElementById('req-remarks-cadet').value.trim();
+
+  if (!itemId) { toast('Select an item before printing.', 'err'); return; }
+  const item = state.items.find(i => i.id === itemId);
+  if (!item)  { toast('Item not found.', 'err'); return; }
+
+  const person = AUTH.session?.svcNo
+    ? state.cadets.find(c => c.svcNo === AUTH.session.svcNo) : null;
+  const requestorName = person
+    ? `${person.rank} ${person.surname}, ${person.given}` : (AUTH.session?.name || '—');
+  const requestorSvc  = AUTH.session?.svcNo || '—';
+  const requestorEmail = person?.email || '—';
+
+  _generateAB189PDF({
+    id:             'DRAFT (unsigned)',
+    itemName:       item.name,
+    nsn:            item.nsn,
+    qty,
+    requestorName,
+    requestorSvc,
+    requestorEmail,
+    purpose,
+    remarks,
+    requestedAt:    new Date().toISOString(),
+    status:         'draft',
+  });
+}
+
+function printAB189ById(reqId) {
+  const req = (state.pendingRequests || []).find(r => r.id === reqId);
+  if (!req) { toast('Request not found.', 'err'); return; }
+  _generateAB189PDF(req);
+}
+
+function _generateAB189PDF(req) {
+  toast('Building AB189 PDF…');
+  _loadJsPDF(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const s    = state.settings || {};
+      const W    = 210;   // A4 width mm
+      const MARGIN = 20;
+      const CW   = W - MARGIN * 2;  // content width
+      let y      = MARGIN;
+
+      const dateStr = new Date(req.requestedAt).toLocaleString('en-AU',
+        { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+
+      // ── Colour helpers ────────────────────────────────────────────────
+      const setFill  = (r,g,b) => doc.setFillColor(r,g,b);
+      const setDraw  = (r,g,b) => doc.setDrawColor(r,g,b);
+      const setFont  = (style='normal', size=10) => { doc.setFontSize(size); doc.setFont('helvetica', style); };
+      const setTxt   = (r,g,b) => doc.setTextColor(r,g,b);
+      const line     = (x1,y1,x2,y2) => doc.line(x1,y1,x2,y2);
+
+      // ── Header bar ───────────────────────────────────────────────────
+      setFill(59, 74, 47);   // army green
+      doc.rect(MARGIN, y, CW, 16, 'F');
+      setFont('bold', 16); setTxt(196, 169, 107);  // tan
+      doc.text('FORM AB189 — EQUIPMENT REQUEST', MARGIN + 4, y + 7);
+      setFont('normal', 8); setTxt(220, 220, 200);
+      doc.text('Australian Army Cadets — Unit Quartermaster', MARGIN + 4, y + 13);
+      y += 20;
+
+      // ── Reference / unit block ────────────────────────────────────────
+      setFont('normal', 9); setTxt(80, 80, 80);
+      doc.text(`Reference: ${req.id}`, MARGIN, y);
+      doc.text(`Unit: ${s.unitName || '—'}`, MARGIN + 80, y);
+      doc.text(`Date: ${dateStr}`, MARGIN, y + 5);
+      setDraw(196, 169, 107); doc.setLineWidth(0.5);
+      line(MARGIN, y + 8, MARGIN + CW, y + 8);
+      y += 14;
+
+      // ── Section helper ────────────────────────────────────────────────
+      function section(title) {
+        setFill(232, 228, 220);
+        doc.rect(MARGIN, y, CW, 6, 'F');
+        setFont('bold', 9); setTxt(59, 74, 47);
+        doc.text(title.toUpperCase(), MARGIN + 2, y + 4.5);
+        y += 8;
+      }
+
+      // ── Row helper: label + value ─────────────────────────────────────
+      function row(label, value, indent=0) {
+        setFont('bold', 9);  setTxt(100, 100, 80);
+        doc.text(label + ':', MARGIN + indent, y);
+        setFont('normal', 9); setTxt(30, 30, 30);
+        // word-wrap long values
+        const maxW = CW - 55;
+        const lines = doc.splitTextToSize(String(value || '—'), maxW);
+        doc.text(lines, MARGIN + 55, y);
+        y += lines.length * 5.5;
+      }
+
+      // ── Requestor ─────────────────────────────────────────────────────
+      section('Requestor Details');
+      row('Full Name / Rank', req.requestorName);
+      row('Service Number',   req.requestorSvc);
+      row('Email Address',    req.requestorEmail || '—');
+      y += 2;
+
+      // ── Item ─────────────────────────────────────────────────────────
+      section('Item Requested');
+      row('NSN / Stores Code', req.nsn);
+      row('Nomenclature',      req.itemName);
+      row('Quantity',          String(req.qty));
+      row('Purpose',           req.purpose);
+      y += 2;
+
+      // ── Remarks ───────────────────────────────────────────────────────
+      section('Remarks / Special Requirements');
+      if (req.remarks && req.remarks.trim()) {
+        setFont('normal', 9); setTxt(30, 30, 30);
+        const lines = doc.splitTextToSize(req.remarks.trim(), CW - 4);
+        doc.text(lines, MARGIN + 2, y);
+        y += lines.length * 5.5 + 2;
+      } else {
+        setFont('italic', 9); setTxt(160, 160, 140);
+        doc.text('(none)', MARGIN + 2, y); y += 7;
+      }
+      y += 4;
+
+      // ── Status (if submitted) ─────────────────────────────────────────
+      if (req.status && req.status !== 'draft') {
+        section('Request Status');
+        row('Status',     req.status.toUpperCase());
+        if (req.approvedBy) row('Approved By', req.approvedBy);
+        if (req.deniedBy)   row('Denied By',   req.deniedBy);
+        y += 2;
+      }
+
+      // ── QM & CO Details ───────────────────────────────────────────────
+      section('Unit Officer Details');
+      row('QM',            `${s.qmRank || ''} ${s.qmName || '—'}`.trim());
+      row('CO / OC',       s.coName || '—');
+      y += 4;
+
+      // ── Signature blocks ──────────────────────────────────────────────
+      setDraw(180, 180, 160); doc.setLineWidth(0.3);
+      const sigY = Math.min(y, 240);   // keep on page
+      const col1 = MARGIN, col2 = MARGIN + CW / 2 + 5;
+      const sigW = CW / 2 - 5;
+
+      function sigBox(x, label, prefill) {
+        setFont('bold', 8); setTxt(80, 80, 60);
+        doc.text(label, x, sigY);
+        setFont('normal', 9); setTxt(30,30,30);
+        if (prefill) doc.text(prefill, x, sigY + 6);
+        setDraw(100,100,80);
+        line(x, sigY + 14, x + sigW, sigY + 14);
+        setFont('normal', 7); setTxt(140,140,120);
+        doc.text('Signature / Date', x, sigY + 18);
+      }
+
+      sigBox(col1, 'Cadet / Requestor Signature:', req.requestorName);
+      sigBox(col2, 'QM Approval / Signature:', `${s.qmRank||''} ${s.qmName||''}`.trim());
+      y = sigY + 22;
+
+      // second row for CO
+      const coSigY = y + 4;
+      sigBox(col1, 'CO / OC Authority:', s.coName || '');
+      y = coSigY + 22;
+
+      // ── Footer ────────────────────────────────────────────────────────
+      setFont('italic', 7); setTxt(160, 160, 140);
+      setDraw(196, 169, 107); doc.setLineWidth(0.3);
+      line(MARGIN, 282, MARGIN + CW, 282);
+      doc.text(
+        `Generated by Q-Store IMS · ${new Date().toLocaleString('en-AU')} · Retain per CADET LOG 01-22`,
+        MARGIN, 286
+      );
+      doc.text('UNCLASSIFIED — FOR TRAINING USE ONLY', MARGIN + CW, 286, { align: 'right' });
+
+      // ── Save ──────────────────────────────────────────────────────────
+      const safeName = req.requestorName.replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `AB189_${req.id}_${safeName}.pdf`;
+      doc.save(fileName);
+      toast(`AB189 saved: ${fileName}`);
+    } catch(err) {
+      console.error('AB189 PDF error:', err);
+      toast('PDF generation failed — ' + err.message, 'err');
+    }
+  });
+}
+
 function approveRequest(reqId) {
   const req=(state.pendingRequests||[]).find(r=>r.id===reqId);
   if (!req) return;
@@ -3633,10 +3829,12 @@ function renderPendingRequests() {
       <div class="rc-title">${r.itemName} × ${r.qty}</div>
       <div class="rc-meta">${r.id} · ${r.requestorName} · ${r.purpose}</div>
       <div class="rc-meta" style="color:var(--text-dim)">${new Date(r.requestedAt).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}</div>
-      ${AUTH.can('issue')?`<div class="flex-row mt-12" style="gap:6px">
+      <div class="flex-row mt-12" style="gap:6px;flex-wrap:wrap">
+        ${AUTH.can('issue')?`
         <button class="btn btn-primary btn-sm" onclick="approveRequest('${r.id}')">✓ Approve</button>
-        <button class="btn btn-danger btn-sm"  onclick="denyRequest('${r.id}')">✗ Deny</button>
-      </div>`:''}
+        <button class="btn btn-danger btn-sm"  onclick="denyRequest('${r.id}')">✗ Deny</button>`:''}
+        <button class="btn btn-secondary btn-sm" onclick="printAB189ById('${r.id}')">⎙ Print AB189</button>
+      </div>
     </div>`).join('');
 }
 
