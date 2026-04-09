@@ -4666,7 +4666,7 @@ function renderLoans() {
   let loans = state.loans.filter(l => l.active);
   if (filter === 'overdue') loans = loans.filter(l => l.dueDate < today);
   if (filter === 'due-soon') loans = loans.filter(l => l.dueDate >= today && l.dueDate <= soonStr);
-  if (q) loans = loans.filter(l => l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) || l.nsn.includes(q) || l.ref.toLowerCase().includes(q));
+  if (q) loans = loans.filter(l => l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) || l.nsn.includes(q) || l.ref.toLowerCase().includes(q) || (l.borrowerSvc || '').toLowerCase().includes(q));
 
   const tbody = document.getElementById('loans-tbody');
   tbody.innerHTML = loans.map(l => {
@@ -4679,7 +4679,7 @@ function renderLoans() {
       <td class="nsn">${l.nsn}</td>
       <td>${l.itemName}</td>
       <td class="qty-cell" style="color:var(--accent-blue)">${l.qty}</td>
-      <td>${l.borrowerName}</td>
+      <td>${l.borrowerName}<br><span class="text-mono" style="font-size:10px;color:var(--text-secondary)">${l.borrowerSvc || ''}</span></td>
       <td style="font-size:12px">${l.purpose}</td>
       <td class="text-mono">${l.issueDate}</td>
       <td class="text-mono ${l.dueDate < today ? 'text-red' : ''}">${l.dueDate}</td>
@@ -6697,7 +6697,7 @@ function toggleMoreDrawer() {
     if (filter === 'due-soon') loans = loans.filter(l => l.dueDate && l.dueDate >= today && l.dueDate <= soonStr);
     if (q) loans = loans.filter(l =>
       l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) ||
-      l.nsn.includes(q) || l.ref.toLowerCase().includes(q));
+      l.nsn.includes(q) || l.ref.toLowerCase().includes(q) || (l.borrowerSvc || '').toLowerCase().includes(q));
 
     mc.innerHTML = loans.map(l => {
       const ov = l.dueDate && l.dueDate < today;
@@ -6709,7 +6709,7 @@ function toggleMoreDrawer() {
         <div class="loan-mc-name">${l.itemName}</div>
         <div class="loan-mc-nsn">${l.nsn}</div>
         <div class="loan-mc-row">
-          <div class="loan-mc-field"><div class="loan-mc-label">Borrower</div><div class="loan-mc-val">${l.borrowerName}</div></div>
+          <div class="loan-mc-field"><div class="loan-mc-label">Borrower</div><div class="loan-mc-val">${l.borrowerName}<br><span style="font-size:10px;color:var(--text-secondary);font-family:var(--mono)">${l.borrowerSvc || ''}</span></div></div>
           <div class="loan-mc-field"><div class="loan-mc-label">Qty</div><div class="loan-mc-val" style="color:var(--accent-blue)">${l.qty}</div></div>
           <div class="loan-mc-field"><div class="loan-mc-label">Issued</div><div class="loan-mc-val">${l.issueDate}</div></div>
           <div class="loan-mc-field"><div class="loan-mc-label">Due</div><div class="loan-mc-val ${ov ? 'text-red' : ''}">${l.dueDate || '—'}</div></div>
