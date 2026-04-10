@@ -908,6 +908,12 @@
      RESPONSIVE — 768px and below
   ═══════════════════════════════════════════════════════════════ */
   @media (max-width: 768px) {
+    /* ── Login screen ── */
+    #login-screen { padding: 10px; }
+    .login-box { max-width: 100%; }
+    .user-list { grid-template-columns: 1fr; max-height: 45vh; }
+    .login-search { font-size: 16px !important; }
+
     /* ── Header ── */
     .header-top { display: none; }
     .header-main { padding: 8px 12px; gap: 10px; }
@@ -1068,54 +1074,80 @@
   .login-box {
     background: var(--panel-bg);
     border: 1px solid var(--tan);
-    width: 100%; max-width: 420px;
+    width: 100%; max-width: 680px;
     padding: 0;
   }
   .login-header {
     background: var(--army-green);
     border-bottom: 2px solid var(--tan);
-    padding: 20px 24px 16px;
-    text-align: center;
+    padding: 14px 24px 12px;
+    display: flex; align-items: center; gap: 14px;
   }
   .login-header .login-crest {
-    width: 44px; height: 44px;
+    width: 40px; height: 40px;
     background: var(--tan);
     clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-weight: bold; font-size: 12px;
-    color: var(--dark-bg); margin: 0 auto 10px;
+    font-family: var(--mono); font-weight: bold; font-size: 11px;
+    color: var(--dark-bg); flex-shrink: 0;
   }
+  .login-header-text { flex: 1; }
   .login-header h2 {
     font-family: var(--display); font-weight: 900; font-size: 16px;
     letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+    line-height: 1;
   }
   .login-header .login-unit {
     font-family: var(--mono); font-size: 9px; color: var(--tan);
-    letter-spacing: 2px; margin-top: 4px;
+    letter-spacing: 2px; margin-top: 3px;
   }
-  .login-body { padding: 24px; }
+  .login-body { padding: 20px 24px; }
 
-   .user-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  /* Search box above user list */
+  .login-search {
+    width: 100%; background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border); border-radius: 2px;
+    padding: 8px 10px 8px 30px; color: var(--text-primary);
+    font-family: var(--mono); font-size: 12px; margin-bottom: 10px;
+  }
+  .login-search:focus { outline: none; border-color: var(--tan); }
+  .login-search-wrap { position: relative; }
+  .login-search-wrap::before {
+    content: '⌕'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    color: var(--text-dim); font-size: 15px; pointer-events: none;
+  }
+
+  /* User list: 2-column compact grid */
+  .user-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 12px;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
   .user-btn {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
     background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border);
     cursor: pointer; transition: all 0.12s; width: 100%; text-align: left;
+    min-width: 0;
   }
   .user-btn:hover { border-color: var(--tan); background: rgba(196,169,107,0.06); }
   .user-btn.selected { border-color: var(--tan); background: rgba(196,169,107,0.1); }
   .user-btn .ub-avatar {
-    width: 32px; height: 32px; border-radius: 2px;
+    width: 28px; height: 28px; border-radius: 2px;
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 11px; font-weight: bold;
+    font-family: var(--mono); font-size: 10px; font-weight: bold;
     flex-shrink: 0;
   }
   .ub-avatar.role-co    { background: rgba(192,57,43,0.3);  color: var(--accent-red); }
   .ub-avatar.role-qm    { background: rgba(212,147,10,0.3); color: var(--accent-amber); }
   .ub-avatar.role-cadet { background: rgba(36,113,163,0.3); color: #5BA4D4; }
   .ub-avatar.role-ro    { background: rgba(59,74,47,0.6);   color: var(--text-secondary); }
-  .user-btn .ub-info { flex: 1; }
-  .user-btn .ub-name { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 1px; color: var(--text-primary); }
+  .user-btn .ub-info { flex: 1; min-width: 0; overflow: hidden; }
+  .user-btn .ub-name { font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: 0; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .user-btn .ub-role { font-family: var(--mono); font-size: 9px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
 
   .pin-dots { display: flex; gap: 10px; justify-content: center; margin: 12px 0; }
@@ -1176,6 +1208,21 @@
   }
   .request-card .rc-title { font-family: var(--display); font-weight: 700; font-size: 13px; color: #5BA4D4; }
   .request-card .rc-meta  { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
+
+  /* AB189 line-item rows */
+  .req-line {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.15); border: 1px solid var(--panel-border);
+    padding: 8px 10px; margin-bottom: 6px;
+  }
+  .req-line select { flex: 1; min-width: 0; }
+  .req-line input  { width: 70px; flex-shrink: 0; }
+  .req-line .req-line-del {
+    flex-shrink: 0; background: none; border: 1px solid var(--accent-red);
+    color: var(--accent-red); cursor: pointer; padding: 4px 8px;
+    font-size: 13px; border-radius: 2px; line-height: 1;
+  }
+  .req-line .req-line-del:hover { background: rgba(192,57,43,0.15); }
 </style>
 </head>
 <body>
@@ -1277,15 +1324,20 @@
   <div class="login-box">
     <div class="login-header">
       <div class="login-crest">AAC</div>
-      <h2>Q-Store IMS</h2>
-      <div class="login-unit" id="login-unit-name">Australian Army Cadets</div>
+      <div class="login-header-text">
+        <h2>Q-Store IMS</h2>
+        <div class="login-unit" id="login-unit-name">Australian Army Cadets</div>
+      </div>
     </div>
     <div class="login-body">
       <!-- Step 1: select user -->
       <div id="login-step-select">
-        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Select Account</div>
+        <div class="text-mono" style="font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Select Account</div>
+        <div class="login-search-wrap">
+          <input type="text" class="login-search" id="login-search" placeholder="Search name or service number…" oninput="filterLoginUsers(this.value)" autocomplete="off">
+        </div>
         <div class="user-list" id="login-user-list"></div>
-        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;font-family:var(--mono);">
+        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:6px;font-family:var(--mono);">
           Contact your QM or CO to create an account.
         </div>
       </div>
@@ -1613,19 +1665,13 @@
       <div class="panel-body">
         <div class="alert-box info mb-12">
           <div class="alert-title">AB189 — Equipment Request</div>
-          Submit an AB189 request for equipment issue. Your QM and CO/OC will be notified by email where configured. If email is unavailable, use <strong>Print AB189</strong> to generate a signed paper copy to hand to your QM.
+          Add one or more items to this request. All items share the same purpose and remarks. Submit to notify your QM, or print a signed paper copy if email is unavailable.
         </div>
-        <div class="form-grid cols-2">
-          <div class="form-group" style="grid-column:1/-1">
-            <label class="form-label">Item <span class="req">*</span></label>
-            <select class="form-select" id="req-item"></select>
-          </div>
+
+        <!-- Shared fields: purpose + remarks -->
+        <div class="form-grid cols-2" style="margin-bottom:12px">
           <div class="form-group">
-            <label class="form-label">Quantity</label>
-            <input type="number" class="form-input" id="req-qty" value="1" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Purpose</label>
+            <label class="form-label">Purpose <span class="req">*</span></label>
             <select class="form-select" id="req-purpose">
               <option>Annual Camp</option>
               <option>Training Activity</option>
@@ -1636,11 +1682,19 @@
               <option>Other</option>
             </select>
           </div>
-          <div class="form-group" style="grid-column:1/-1">
+          <div class="form-group">
             <label class="form-label">Remarks</label>
-            <textarea class="form-textarea" id="req-remarks-cadet" placeholder="Reason for request, special requirements..."></textarea>
+            <input type="text" class="form-input" id="req-remarks-cadet" placeholder="Special requirements, reason for request…">
           </div>
         </div>
+
+        <!-- Line items -->
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Items Requested</div>
+        <div id="req-line-items">
+          <!-- populated by addReqLine() -->
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addReqLine()" style="margin-top:6px">+ Add Item</button>
+
         <div class="mt-12 flex-row" style="gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="submitIssueRequest()">Submit Request</button>
           <button class="btn btn-secondary" onclick="printAB189Form()">⎙ Print AB189</button>
@@ -2584,6 +2638,13 @@
       <input type="hidden" id="edit-cadet-svc">
       <div class="form-grid cols-2">
         <div class="form-group">
+          <label class="form-label">Person Type</label>
+          <select class="form-select" id="edit-cadet-type">
+            <option value="cadet">Cadet</option>
+            <option value="staff">Staff / Officer</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">Rank</label>
           <select class="form-select" id="edit-cadet-rank">
             <optgroup label="Cadet Ranks">
@@ -3251,6 +3312,8 @@ let pinBuffer = '';
 function showLoginScreen() {
   document.getElementById('login-screen').classList.remove('hidden');
   loginSelectedUser = null; pinBuffer = '';
+  const s = document.getElementById('login-search');
+  if (s) s.value = '';
   renderLoginUserList();
   document.getElementById('login-step-select').style.display = '';
   document.getElementById('login-step-pin').style.display = 'none';
@@ -3270,10 +3333,37 @@ function renderLoginUserList() {
   const list  = document.getElementById('login-user-list');
   const users = state.users || [];
   if (!users.length) {
-    list.innerHTML = '<div class="text-muted text-mono" style="text-align:center;padding:16px">No accounts configured.</div>';
+    list.innerHTML = '<div class="text-muted text-mono" style="text-align:center;padding:16px;grid-column:1/-1">No accounts configured.</div>';
     return;
   }
-  list.innerHTML = users.map(u => `
+  // Sort: staff/CO first by role priority, then alphabetically by name
+  const rolePriority = { co: 0, qm: 1, staff: 2, cadet: 3, ro: 4 };
+  const sorted = [...users].sort((a, b) => {
+    const rp = (rolePriority[a.role] ?? 9) - (rolePriority[b.role] ?? 9);
+    if (rp !== 0) return rp;
+    return a.name.localeCompare(b.name);
+  });
+  _renderUserButtons(list, sorted);
+}
+
+function filterLoginUsers(q) {
+  const list  = document.getElementById('login-user-list');
+  const users = state.users || [];
+  if (!q.trim()) { renderLoginUserList(); return; }
+  const ql = q.toLowerCase();
+  const rolePriority = { co: 0, qm: 1, staff: 2, cadet: 3, ro: 4 };
+  const filtered = [...users]
+    .filter(u => u.name.toLowerCase().includes(ql) || (u.svcNo || '').toLowerCase().includes(ql) || (u.username || '').toLowerCase().includes(ql))
+    .sort((a, b) => (rolePriority[a.role] ?? 9) - (rolePriority[b.role] ?? 9) || a.name.localeCompare(b.name));
+  if (!filtered.length) {
+    list.innerHTML = '<div class="text-muted text-mono" style="text-align:center;padding:12px;grid-column:1/-1">No accounts match.</div>';
+    return;
+  }
+  _renderUserButtons(list, filtered);
+}
+
+function _renderUserButtons(container, users) {
+  container.innerHTML = users.map(u => `
     <button class="user-btn" onclick="selectLoginUser('${u.id}')">
       <div class="ub-avatar role-${u.role}">${AUTH.ROLES[u.role]?.short || '?'}</div>
       <div class="ub-info">
@@ -3297,6 +3387,9 @@ function loginBack() {
   document.getElementById('login-step-select').style.display = '';
   document.getElementById('login-step-pin').style.display = 'none';
   loginSelectedUser = null; pinBuffer = '';
+  const s = document.getElementById('login-search');
+  if (s) { s.value = ''; }
+  renderLoginUserList();
 }
 
 function pinKey(digit) {
@@ -3466,66 +3559,119 @@ function deleteUser(uid) {
 // =====================================================================
 // CADET ISSUE REQUEST SYSTEM
 // =====================================================================
-function populateRequestItems() {
-  const sel = document.getElementById('req-item');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Select item —</option>';
+// AB189 LINE-ITEM MANAGEMENT
+// =====================================================================
+
+// Builds the <select> option HTML for available items (shared across all lines)
+function _reqItemOptionsHTML() {
+  let html = '<option value="">— Select item —</option>';
   state.items.forEach(i => {
     const avail = i.onHand - i.onLoan;
     if (avail > 0 && i.condition !== 'written-off') {
-      const opt = document.createElement('option');
-      opt.value = i.id;
-      opt.textContent = `${i.name} (${i.nsn}) — Avail: ${avail}`;
-      sel.appendChild(opt);
+      html += `<option value="${i.id}">${i.name} (${i.nsn}) — Avail: ${avail}</option>`;
     }
   });
+  return html;
+}
+
+let _reqLineCounter = 0;
+
+function populateRequestItems() {
+  // Refresh selects in any existing lines
+  document.querySelectorAll('.req-line-item-sel').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = _reqItemOptionsHTML();
+    sel.value = cur; // restore selection if still valid
+  });
+  // Ensure at least one line exists
+  if (!document.getElementById('req-line-items').children.length) addReqLine();
+}
+
+function addReqLine() {
+  const id = ++_reqLineCounter;
+  const container = document.getElementById('req-line-items');
+  const div = document.createElement('div');
+  div.className = 'req-line';
+  div.id = 'req-line-' + id;
+  div.innerHTML =
+    `<select class="form-select req-line-item-sel" id="req-line-item-${id}">${_reqItemOptionsHTML()}</select>` +
+    `<input type="number" class="form-input req-line-qty" id="req-line-qty-${id}" value="1" min="1" style="width:70px" title="Quantity">` +
+    `<button class="req-line-del" onclick="removeReqLine(${id})" title="Remove line">✕</button>`;
+  container.appendChild(div);
+}
+
+function removeReqLine(id) {
+  const el = document.getElementById('req-line-' + id);
+  if (el) el.remove();
+  // Always keep at least one line
+  if (!document.getElementById('req-line-items').children.length) addReqLine();
+}
+
+function _collectReqLines() {
+  // Returns array of {itemId, item, qty} or null if any line is invalid
+  const lines = [];
+  let valid = true;
+  document.querySelectorAll('.req-line').forEach(row => {
+    const selEl = row.querySelector('.req-line-item-sel');
+    const qtyEl = row.querySelector('.req-line-qty');
+    const itemId = selEl?.value;
+    const qty    = parseInt(qtyEl?.value) || 1;
+    if (!itemId) { valid = false; return; }
+    const item = state.items.find(i => i.id === itemId);
+    if (!item)  { valid = false; return; }
+    lines.push({ itemId, item, qty });
+  });
+  return valid ? lines : null;
 }
 
 function submitIssueRequest() {
-  const itemId  = document.getElementById('req-item').value;
-  const qty     = parseInt(document.getElementById('req-qty').value)||1;
   const purpose = document.getElementById('req-purpose').value;
-  const remarks = document.getElementById('req-remarks-cadet').value;
-  if (!itemId){ toast('Select an item to request.', 'err'); return; }
-  const item   = state.items.find(i => i.id === itemId);
-  if (!item)  { toast('Item not found.', 'err'); return; }
+  const remarks = document.getElementById('req-remarks-cadet').value.trim();
 
-  // Requestor can be any logged-in user (not just those with svcNo)
+  const lines = _collectReqLines();
+  if (!lines || !lines.length) {
+    toast('Please select at least one item to request.', 'err'); return;
+  }
+
   const person = AUTH.session?.svcNo
-    ? state.cadets.find(c => c.svcNo === AUTH.session.svcNo)
-    : null;
-  const requestorName = person
-    ? `${person.rank} ${person.surname}, ${person.given}`
-    : AUTH.session?.name || 'Unknown';
-  const requestorSvc  = AUTH.session?.svcNo || AUTH.session?.userId || '';
+    ? state.cadets.find(c => c.svcNo === AUTH.session.svcNo) : null;
+  const requestorName  = person
+    ? `${person.rank} ${person.surname}, ${person.given}` : (AUTH.session?.name || 'Unknown');
+  const requestorSvc   = AUTH.session?.svcNo || AUTH.session?.userId || '';
+  const requestorEmail = person?.email || '';
 
   if (!state.pendingRequests) state.pendingRequests = [];
   const ab189Ref = 'AB189-' + Date.now();
+
   const req = {
     id:            ab189Ref,
     form:          'AB189',
-    itemId:        item.id,
-    itemName:      item.name,
-    nsn:           item.nsn,
-    qty,
+    // Multi-item: lines array + legacy single-item fields from first line for back-compat
+    lines:         lines.map(l => ({ itemId: l.item.id, itemName: l.item.name, nsn: l.item.nsn, qty: l.qty })),
+    itemId:        lines[0].item.id,
+    itemName:      lines.length === 1 ? lines[0].item.name : `${lines.length} items (see details)`,
+    nsn:           lines[0].item.nsn,
+    qty:           lines.reduce((s, l) => s + l.qty, 0),
     requestorSvc,
     requestorName,
-    requestorEmail: person?.email || '',
+    requestorEmail,
     purpose,
     remarks,
     requestedAt:   new Date().toISOString(),
     status:        'pending',
   };
   state.pendingRequests.push(req);
-  logAudit('add', `AB189 ${ab189Ref}: ${item.name} × ${qty} requested by ${requestorName} for ${purpose}`);
-  save(); renderPendingRequests();
 
-  // Send email notification to QM and CO/OC via mailto:
+  const itemSummary = lines.map(l => `${l.item.name} × ${l.qty}`).join(', ');
+  logAudit('add', `AB189 ${ab189Ref}: [${itemSummary}] requested by ${requestorName} for ${purpose}`);
+  save(); renderPendingRequests();
   _sendAB189Email(req);
 
-  toast(`AB189 ${ab189Ref} submitted — QM and CO notified.`);
-  document.getElementById('req-item').value     = '';
-  document.getElementById('req-qty').value      = '1';
+  toast(`AB189 ${ab189Ref} submitted — ${lines.length} item line${lines.length>1?'s':''}.`);
+  // Clear lines, keep one empty row
+  document.getElementById('req-line-items').innerHTML = '';
+  _reqLineCounter = 0;
+  addReqLine();
   document.getElementById('req-remarks-cadet').value = '';
 }
 
@@ -3565,14 +3711,14 @@ function _sendAB189Email(req) {
     `Email:           ${req.requestorEmail || '—'}
 
 ` +
-    `ITEM REQUESTED
+    `ITEMS REQUESTED
 ` +
-    `NSN:             ${req.nsn}
-` +
-    `Nomenclature:    ${req.itemName}
-` +
-    `Quantity:        ${req.qty}
-` +
+    ((req.lines && req.lines.length > 1)
+      ? req.lines.map((l, i) => `  ${i+1}. ${l.itemName} (${l.nsn}) × ${l.qty}\n`).join('')
+      : `NSN:             ${req.nsn}
+Nomenclature:    ${req.itemName}
+Quantity:        ${req.qty}
+`) +
     `Purpose:         ${req.purpose}
 ` +
     `Remarks:         ${req.remarks || '—'}
@@ -3602,27 +3748,25 @@ function _sendAB189Email(req) {
 // _generateAB189PDF() — shared PDF builder using jsPDF text API
 
 function printAB189Form() {
-  const itemId  = document.getElementById('req-item').value;
-  const qty     = parseInt(document.getElementById('req-qty').value) || 1;
   const purpose = document.getElementById('req-purpose').value;
   const remarks = document.getElementById('req-remarks-cadet').value.trim();
 
-  if (!itemId) { toast('Select an item before printing.', 'err'); return; }
-  const item = state.items.find(i => i.id === itemId);
-  if (!item)  { toast('Item not found.', 'err'); return; }
+  const lines = _collectReqLines();
+  if (!lines || !lines.length) { toast('Select at least one item before printing.', 'err'); return; }
 
   const person = AUTH.session?.svcNo
     ? state.cadets.find(c => c.svcNo === AUTH.session.svcNo) : null;
-  const requestorName = person
+  const requestorName  = person
     ? `${person.rank} ${person.surname}, ${person.given}` : (AUTH.session?.name || '—');
-  const requestorSvc  = AUTH.session?.svcNo || '—';
+  const requestorSvc   = AUTH.session?.svcNo || '—';
   const requestorEmail = person?.email || '—';
 
   _generateAB189PDF({
     id:             'DRAFT (unsigned)',
-    itemName:       item.name,
-    nsn:            item.nsn,
-    qty,
+    lines:          lines.map(l => ({ itemId: l.item.id, itemName: l.item.name, nsn: l.item.nsn, qty: l.qty })),
+    itemName:       lines.length === 1 ? lines[0].item.name : `${lines.length} items`,
+    nsn:            lines[0].item.nsn,
+    qty:            lines.reduce((s,l) => s + l.qty, 0),
     requestorName,
     requestorSvc,
     requestorEmail,
@@ -3707,12 +3851,43 @@ function _generateAB189PDF(req) {
       row('Email Address',    req.requestorEmail || '—');
       y += 2;
 
-      // ── Item ─────────────────────────────────────────────────────────
-      section('Item Requested');
-      row('NSN / Stores Code', req.nsn);
-      row('Nomenclature',      req.itemName);
-      row('Quantity',          String(req.qty));
-      row('Purpose',           req.purpose);
+      // ── Item(s) ───────────────────────────────────────────────────────
+      section('Items Requested');
+      const reqLines = req.lines && req.lines.length ? req.lines : [{ nsn: req.nsn, itemName: req.itemName, qty: req.qty }];
+
+      if (reqLines.length === 1) {
+        // Single item — use row format
+        row('NSN / Stores Code', reqLines[0].nsn);
+        row('Nomenclature',      reqLines[0].itemName);
+        row('Quantity',          String(reqLines[0].qty));
+      } else {
+        // Multiple items — draw a mini table
+        const colX   = [MARGIN + 2, MARGIN + 55, MARGIN + 120, MARGIN + 145];
+        const colHdr = ['#', 'NSN / Stores Code', 'Nomenclature', 'Qty'];
+        // Header row
+        setFill(180, 175, 165);
+        doc.rect(MARGIN, y, CW, 6, 'F');
+        setFont('bold', 8); setTxt(50, 50, 40);
+        colHdr.forEach((h, i) => doc.text(h, colX[i], y + 4.5));
+        y += 7;
+        // Data rows
+        reqLines.forEach((l, i) => {
+          if (i % 2 === 1) { setFill(245, 243, 238); doc.rect(MARGIN, y - 1, CW, 6, 'F'); }
+          setFont('normal', 8); setTxt(30, 30, 30);
+          doc.text(String(i + 1),  colX[0], y + 3.5);
+          doc.text(String(l.nsn || '—').slice(0, 18), colX[1], y + 3.5);
+          const nameLines = doc.splitTextToSize(l.itemName || '—', 62);
+          doc.text(nameLines[0], colX[2], y + 3.5); // first line only to keep table tight
+          doc.text(String(l.qty), colX[3], y + 3.5);
+          y += 6;
+        });
+        // Total row
+        const totalQty = reqLines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+        setFont('bold', 8); setTxt(59, 74, 47);
+        doc.text(`Total qty: ${totalQty}`, MARGIN + CW - 30, y + 3, { align: 'right' });
+        y += 7;
+      }
+      row('Purpose', req.purpose);
       y += 2;
 
       // ── Remarks ───────────────────────────────────────────────────────
@@ -3827,20 +4002,46 @@ function _generateAB189PDF(req) {
 function approveRequest(reqId) {
   const req=(state.pendingRequests||[]).find(r=>r.id===reqId);
   if (!req) return;
-  const item=state.items.find(i=>i.id===req.itemId);
-  if (!item){toast('Item no longer exists.','err');return;}
-  if (req.qty > item.onHand-item.onLoan){toast(`Insufficient stock — only ${item.onHand-item.onLoan} available.`,'err');return;}
-  const dueDate=prompt('Set due date (YYYY-MM-DD):')||'';
-  const loan={ ref:'LN-'+state.loanCounter++, itemId:item.id, itemName:item.name, nsn:item.nsn,
-    qty:req.qty, borrowerSvc:req.requestorSvc, borrowerName:req.requestorName,
-    purpose:req.purpose, issueDate:new Date().toISOString().slice(0,10), dueDate,
-    condition:'serviceable', active:true, approvedBy:AUTH.session?.name };
-  state.loans.push(loan);
-  item.onLoan+=req.qty;
-  req.status='approved'; req.approvedBy=AUTH.session?.name; req.approvedAt=new Date().toISOString();
-  logAudit('issue',`${loan.ref}: ${item.name} × ${req.qty} issued to ${req.requestorName} (approved ${req.id})`);
+
+  // Normalise to lines array (back-compat with old single-item requests)
+  const lines = req.lines && req.lines.length
+    ? req.lines
+    : [{ itemId: req.itemId, itemName: req.itemName, nsn: req.nsn, qty: req.qty }];
+
+  // Validate all items have stock
+  for (const l of lines) {
+    const item = state.items.find(i => i.id === l.itemId);
+    if (!item) { toast(`Item "${l.itemName}" no longer exists.`, 'err'); return; }
+    const avail = item.onHand - item.onLoan;
+    if (l.qty > avail) { toast(`Insufficient stock for ${l.itemName} — only ${avail} available.`, 'err'); return; }
+  }
+
+  const dueDate = prompt('Set due date for all items (YYYY-MM-DD):') || '';
+  const issuedRefs = [];
+
+  for (const l of lines) {
+    const item = state.items.find(i => i.id === l.itemId);
+    const loan = {
+      ref:          'LN-' + state.loanCounter++,
+      itemId:       item.id, itemName: item.name, nsn: item.nsn,
+      qty:          l.qty,
+      borrowerSvc:  req.requestorSvc, borrowerName: req.requestorName,
+      purpose:      req.purpose,
+      issueDate:    new Date().toISOString().slice(0,10),
+      dueDate,
+      condition:    'serviceable', active: true,
+      approvedBy:   AUTH.session?.name,
+      ab189Ref:     req.id,
+    };
+    state.loans.push(loan);
+    item.onLoan += l.qty;
+    issuedRefs.push(loan.ref);
+    logAudit('issue', `${loan.ref}: ${item.name} × ${l.qty} issued to ${req.requestorName} (approved ${req.id})`);
+  }
+
+  req.status = 'approved'; req.approvedBy = AUTH.session?.name; req.approvedAt = new Date().toISOString();
   save(); renderAll(); renderPendingRequests();
-  toast(`Request approved — ${loan.ref} issued.`);
+  toast(`Request approved — issued: ${issuedRefs.join(', ')}`);
 }
 
 function denyRequest(reqId) {
@@ -3857,18 +4058,22 @@ function renderPendingRequests() {
   if (!el) return;
   const pending=(state.pendingRequests||[]).filter(r=>r.status==='pending');
   if (!pending.length){el.innerHTML='<div class="text-muted text-mono">No pending requests.</div>';return;}
-  el.innerHTML=pending.map(r=>`
+  el.innerHTML=pending.map(r=>{
+    const linesSummary = r.lines && r.lines.length > 1
+      ? r.lines.map(l=>`${l.itemName} ×${l.qty}`).join(' · ')
+      : `${r.itemName} × ${r.qty}`;
+    return `
     <div class="request-card">
-      <div class="rc-title">${r.itemName} × ${r.qty}</div>
+      <div class="rc-title">${linesSummary}</div>
       <div class="rc-meta">${r.id} · ${r.requestorName} · ${r.purpose}</div>
       <div class="rc-meta" style="color:var(--text-dim)">${new Date(r.requestedAt).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}</div>
       <div class="flex-row mt-12" style="gap:6px;flex-wrap:wrap">
         ${AUTH.can('issue')?`
-        <button class="btn btn-primary btn-sm" onclick="approveRequest('${r.id}')">✓ Approve</button>
+        <button class="btn btn-primary btn-sm" onclick="approveRequest('${r.id}')">✓ Approve All</button>
         <button class="btn btn-danger btn-sm"  onclick="denyRequest('${r.id}')">✗ Deny</button>`:''}
         <button class="btn btn-secondary btn-sm" onclick="printAB189ById('${r.id}')">⎙ Print AB189</button>
       </div>
-    </div>`).join('');
+    </div>`}).join('');
 }
 
 // =====================================================================
@@ -4848,6 +5053,7 @@ function openEditCadet(svc) {
   const c = state.cadets.find(x => x.svcNo === svc);
   if (!c) return;
   document.getElementById('edit-cadet-svc').value     = svc;
+  document.getElementById('edit-cadet-type').value    = c.personType || 'cadet';
   document.getElementById('edit-cadet-rank').value    = c.rank;
   document.getElementById('edit-cadet-surname').value = c.surname;
   document.getElementById('edit-cadet-given').value   = c.given;
@@ -4865,6 +5071,7 @@ function saveEditCadet() {
   const svc = document.getElementById('edit-cadet-svc').value;
   const c   = state.cadets.find(x => x.svcNo === svc);
   if (!c) { toast('Record not found.', 'err'); return; }
+  c.personType = document.getElementById('edit-cadet-type').value;
   c.rank    = document.getElementById('edit-cadet-rank').value;
   c.surname = document.getElementById('edit-cadet-surname').value.trim().toUpperCase();
   c.given   = document.getElementById('edit-cadet-given').value.trim();
@@ -4873,11 +5080,15 @@ function saveEditCadet() {
   c.shirt   = document.getElementById('edit-cadet-shirt').value;
   c.trouser = document.getElementById('edit-cadet-trouser').value.trim();
   c.boot    = document.getElementById('edit-cadet-boot').value.trim();
-  // Update linked user account name + email
+  // Sync linked user account: name, email, and role
   const user = (state.users||[]).find(u => u.svcNo === svc);
   if (user) {
     user.name  = `${c.rank} ${c.surname}, ${c.given}`;
     user.email = c.email;
+    // Only update role if it's a basic cadet/staff account (not a promoted CO/QM account)
+    if (user.role === 'cadet' || user.role === 'staff') {
+      user.role = c.personType === 'staff' ? 'staff' : 'cadet';
+    }
   }
   // Reset PIN if provided
   const newPin = document.getElementById('edit-cadet-pin').value;
@@ -4885,7 +5096,7 @@ function saveEditCadet() {
     user.pinHash = AUTH.hashPin(newPin);
     logAudit('adjust', `PIN reset for ${c.rank} ${c.surname} via personnel record edit`);
   }
-  logAudit('adjust', `Personnel record updated: ${c.rank} ${c.surname}, ${c.given} (${svc})`);
+  logAudit('adjust', `Personnel record updated: ${c.rank} ${c.surname}, ${c.given} (${svc}) — type: ${c.personType}`);
   save(); renderCadets(); renderUsers();
   closeModal('modal-edit-cadet');
   toast(`${c.rank} ${c.surname} updated.`);
