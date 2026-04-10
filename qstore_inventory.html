@@ -2912,10 +2912,16 @@ const OD = {
       const response = await this.msalInstance.handleRedirectPromise();
 
       if (response && response.account) {
-        // We just came back from a redirect login — store the account
+        // We just came back from a redirect login (or token refresh redirect)
         this.account = response.account;
         this.msalInstance.setActiveAccount(this.account);
         this.addLog('ok', `Signed in via redirect: ${this.account.username}`);
+        // If this was a token-refresh redirect, resume a pending sync
+        if (sessionStorage.getItem('qstore_od_token_refresh')) {
+          sessionStorage.removeItem('qstore_od_token_refresh');
+          this.addLog('info', 'Token refresh complete — resuming sync');
+          setTimeout(() => this.upload(state), 500);
+        }
       } else {
         // Not a redirect — check if a cached account already exists
         const accounts = this.msalInstance.getAllAccounts();
@@ -2955,29 +2961,58 @@ const OD = {
     }
   },
 
-  // ---- Sign in using popup (works without a server, no redirect needed) ----
+  // ---- Detect whether the current device prefers redirect over popup ----
+  // Mobile browsers block popups opened outside a synchronous click handler.
+  // Safari on iOS blocks ALL programmatic window.open() calls regardless.
+  // Use redirect flow on any touch device; popup on desktop where it works reliably.
+  _useRedirect() {
+    return ('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  },
+
+  // ---- Sign in: popup on desktop, redirect on mobile ----
   async signIn() {
     if (!this.msalInstance) {
       toast('Save your Client ID first, then try again.', 'err');
       return;
     }
+    const request = {
+      scopes:      ['Files.ReadWrite', 'User.Read'],
+      redirectUri: this.getRedirectUri(),
+      prompt:      'select_account',
+    };
     try {
-      // Use loginPopup — works from any https:// hosted URL.
-      // Explicitly pass redirectUri so MSAL never infers the wrong value.
-      const resp = await this.msalInstance.loginPopup({
-        scopes:      ['Files.ReadWrite', 'User.Read'],
-        redirectUri: this.getRedirectUri(),
-        prompt:      'select_account',
-      });
-      this.account = resp.account;
-      this.msalInstance.setActiveAccount(this.account);
-      this.addLog('ok', `Signed in: ${this.account.username}`);
-      this.updateUI();
-      toast('Signed in to Microsoft successfully.');
+      if (this._useRedirect()) {
+        // Redirect flow — navigates away and returns; result handled in init()
+        // via handleRedirectPromise().  Show a status note so the user knows
+        // they will be redirected.
+        this.setStatus('busy', '☁ REDIRECTING…');
+        this.addLog('info', 'Mobile device detected — using redirect sign-in flow');
+        await this.msalInstance.loginRedirect(request);
+        // Execution stops here on mobile — the page navigates away
+      } else {
+        const resp = await this.msalInstance.loginPopup(request);
+        this.account = resp.account;
+        this.msalInstance.setActiveAccount(this.account);
+        this.addLog('ok', `Signed in: ${this.account.username}`);
+        this.updateUI();
+        toast('Signed in to Microsoft successfully.');
+      }
     } catch (err) {
       const msg = err.message || String(err);
       if (msg.includes('popup_window_error') || msg.includes('user_cancelled')) {
-        toast('Sign-in cancelled or popup blocked. Allow popups for this page.', 'warn');
+        // Desktop popup was blocked — fall back to redirect automatically
+        this.addLog('warn', 'Popup blocked — retrying with redirect flow');
+        toast('Popup was blocked — redirecting to Microsoft sign-in…', 'warn');
+        try {
+          await this.msalInstance.loginRedirect(request);
+        } catch (redirErr) {
+          this.addLog('err', 'Redirect also failed: ' + (redirErr.message || redirErr));
+          toast('Sign-in failed — see sync log.', 'err');
+        }
+      } else if (msg.includes('BrowserAuthError') && msg.includes('interaction_in_progress')) {
+        toast('A sign-in is already in progress. Please wait.', 'warn');
       } else {
         this.addLog('err', 'Sign-in failed: ' + msg);
         toast('Sign-in failed — see sync log for details.', 'err');
@@ -2985,22 +3020,32 @@ const OD = {
     }
   },
 
-  // ---- Sign out ----
+  // ---- Sign out: popup on desktop, redirect on mobile ----
   async signOut() {
     if (!this.msalInstance || !this.account) return;
     try {
-      // logoutPopup clears the MSAL token cache without navigating away
-      await this.msalInstance.logoutPopup({ account: this.account });
+      if (this._useRedirect()) {
+        await this.msalInstance.logoutRedirect({
+          account:     this.account,
+          postLogoutRedirectUri: this.getRedirectUri(),
+        });
+        // Page navigates away — code below won't execute on mobile
+      } else {
+        await this.msalInstance.logoutPopup({ account: this.account });
+        this.account = null;
+        this.updateUI();
+        toast('Signed out of OneDrive.');
+      }
     } catch(e) {
-      // If popup fails, manually clear cache
-      this.msalInstance.clearCache();
+      // Any failure — clear the cache locally and treat as signed out
+      try { this.msalInstance.clearCache(); } catch(_) {}
+      this.account = null;
+      this.updateUI();
+      toast('Signed out of OneDrive.');
     }
-    this.account = null;
-    this.updateUI();
-    toast('Signed out of OneDrive.');
   },
 
-  // ---- Silently acquire an access token, fall back to popup ----
+  // ---- Silently acquire a token; fall back to redirect or popup ----
   async getAccessToken() {
     if (!this.msalInstance || !this.account) return null;
     const request = {
@@ -3008,21 +3053,44 @@ const OD = {
       account: this.account,
     };
     try {
-      // Try silent acquisition first (uses cached token or refresh token)
+      // Silent path: uses cached token or refresh token — no user interaction
       const resp = await this.msalInstance.acquireTokenSilent(request);
       return resp.accessToken;
     } catch (silentErr) {
-      // InteractionRequiredAuthError means we need user interaction
       if (silentErr instanceof msal.InteractionRequiredAuthError) {
+        // Interaction required — use redirect on mobile, popup on desktop
         try {
-          const resp = await this.msalInstance.acquireTokenPopup({
-            ...request,
-            redirectUri: this.getRedirectUri(),
-          });
-          this.account = resp.account;
-          return resp.accessToken;
-        } catch (popupErr) {
-          this.addLog('err', 'Token refresh failed: ' + (popupErr.message || popupErr));
+          if (this._useRedirect()) {
+            // Store a flag so init() knows to resume sync after redirect
+            sessionStorage.setItem('qstore_od_token_refresh', '1');
+            this.setStatus('busy', '☁ RE-AUTHENTICATING…');
+            await this.msalInstance.acquireTokenRedirect({
+              ...request,
+              redirectUri: this.getRedirectUri(),
+            });
+            return null; // page navigates away
+          } else {
+            const resp = await this.msalInstance.acquireTokenPopup({
+              ...request,
+              redirectUri: this.getRedirectUri(),
+            });
+            this.account = resp.account;
+            return resp.accessToken;
+          }
+        } catch (interactErr) {
+          const msg = interactErr.message || String(interactErr);
+          if (msg.includes('popup_window_error')) {
+            // Desktop popup blocked — fall back to redirect
+            try {
+              sessionStorage.setItem('qstore_od_token_refresh', '1');
+              await this.msalInstance.acquireTokenRedirect({
+                ...request,
+                redirectUri: this.getRedirectUri(),
+              });
+            } catch(e2) { this.addLog('err', 'Token redirect failed: ' + (e2.message||e2)); }
+          } else {
+            this.addLog('err', 'Token refresh failed: ' + msg);
+          }
           return null;
         }
       }
@@ -3167,7 +3235,10 @@ const OD = {
       this.setStatus('ok', '☁ SIGNED IN');
     } else if (hasClient) {
       this.showStatusBox('warning', 'Client ID Saved — Sign In Required',
-        'MSAL is initialised. Click <strong>Sign In to Microsoft</strong> to authenticate and enable sync. A popup window will appear.');
+        'MSAL is initialised. Click <strong>Sign In to Microsoft</strong> to authenticate and enable sync. ' +
+        (this._useRedirect()
+          ? 'On this device, sign-in uses a <strong>redirect</strong> — the page will navigate to Microsoft and return automatically.'
+          : 'A pop-up window will appear for sign-in.'));
       this.setStatus('off', '☁ SIGN IN REQUIRED');
     } else {
       this.showStatusBox('warning', 'Not Configured',
