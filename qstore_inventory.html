@@ -570,7 +570,8 @@
   .badge-cat1 { background: rgba(39,174,96,0.15); border:1px solid var(--accent-green); color: var(--accent-green); }
   .badge-cat2 { background: rgba(212,147,10,0.15); border:1px solid var(--accent-amber); color: var(--accent-amber); }
   .badge-cat3 { background: rgba(192,57,43,0.15); border:1px solid var(--accent-red); color: var(--accent-red); }
-  .badge-cat-ict { background: rgba(100,60,180,0.15); border:1px solid #8B5CF6; color: #A78BFA; }
+  .badge-cat-ict    { background: rgba(100,60,180,0.15); border:1px solid #8B5CF6; color: #A78BFA; }
+  .badge-cat-office { background: rgba(20,120,150,0.15); border:1px solid #2196A8; color: #5BC4CC; }
 
   /* FORMS */
   .form-grid { display: grid; gap: 12px; }
@@ -1438,6 +1439,7 @@
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
           <option value="ICT">ICT</option>
+          <option value="Office Supplies">Office Supplies</option>
         </select>
         <button class="btn btn-primary btn-sm" id="add-item-btn" onclick="openModal('modal-add-item')">+ Add Item</button>
       </div>
@@ -1831,6 +1833,7 @@
           <option value="Field Stores">Field Stores</option>
           <option value="Medical">Medical</option>
           <option value="ICT">ICT</option>
+          <option value="Office Supplies">Office Supplies</option>
         </select>
         <button class="btn btn-secondary btn-sm" onclick="renderStocktake()">↺ Refresh</button>
         <button class="btn btn-amber" onclick="clearStocktakeCounts()">Clear All Counts</button>
@@ -2488,6 +2491,7 @@
           <select class="form-select" id="add-cat">
             <option>Uniform</option><option>Equipment</option><option>Safety</option>
             <option>Training Aids</option><option>Field Stores</option><option>Medical</option><option>ICT</option>
+            <option>Office Supplies</option>
           </select>
         </div>
         <div class="form-group" style="grid-column:1/-1">
@@ -2743,6 +2747,7 @@
           <select class="form-select" id="edit-cat">
             <option>Uniform</option><option>Equipment</option><option>Safety</option>
             <option>Training Aids</option><option>Field Stores</option><option>Medical</option><option>ICT</option>
+            <option>Office Supplies</option>
           </select>
         </div>
         <div class="form-group" style="grid-column:1/-1">
@@ -4536,7 +4541,7 @@ function renderInventory() {
       <td class="nsn">${item.nsn}</td>
       <td class="item-thumb-cell">${thumbHtml}</td>
       <td><strong>${item.name}</strong><br><span class="text-mono" style="font-size:10px;color:var(--text-dim)">${item.cat}</span></td>
-      <td><span class="badge ${item.cat === 'Safety' ? 'badge-cat3' : item.cat === 'Equipment' ? 'badge-cat2' : item.cat === 'ICT' ? 'badge-cat-ict' : 'badge-cat1'}">${item.cat}</span></td>
+      <td><span class="badge ${item.cat === 'Safety' ? 'badge-cat3' : item.cat === 'Equipment' ? 'badge-cat2' : item.cat === 'ICT' ? 'badge-cat-ict' : item.cat === 'Office Supplies' ? 'badge-cat-office' : 'badge-cat1'}">${item.cat}</span></td>
       <td class="qty-cell" style="color:var(--text-secondary)">${item.authQty}</td>
       <td class="qty-cell">
         ${item.onHand}
@@ -6567,10 +6572,20 @@ function nsnInputHandler(el) {
 
     // Only update the field value if it has actually changed (prevents cursor jump)
     if (el.value !== formatted) {
-      const cursor = el.selectionStart;
+      // Calculate where the cursor sits in digit-space (ignore hyphens already in raw)
+      const rawBeforeCursor = el.value.slice(0, el.selectionStart);
+      const digitsBeforeCursor = rawBeforeCursor.replace(/[-\s]/g, '').length;
+
       el.value = formatted;
-      // Restore cursor — account for hyphens inserted before cursor position
-      const newCursor = formatted.length < cursor ? formatted.length : cursor;
+
+      // Find the position in the formatted string that corresponds to
+      // the same number of digits before the cursor
+      let digitCount = 0;
+      let newCursor  = formatted.length; // default: end of string
+      for (let i = 0; i < formatted.length; i++) {
+        if (digitCount === digitsBeforeCursor) { newCursor = i; break; }
+        if (formatted[i] !== '-') digitCount++;
+      }
       try { el.setSelectionRange(newCursor, newCursor); } catch(_) {}
     }
 
@@ -7144,7 +7159,7 @@ function toggleMoreDrawer() {
       return `<span class="badge ${m[c]||'badge-serviceable'}">${c}</span>`;
     };
     const catBadge = cat => {
-      const cls = cat==='Safety'?'badge-cat3':cat==='Equipment'?'badge-cat2':cat==='ICT'?'badge-cat-ict':'badge-cat1';
+      const cls = cat==='Safety'?'badge-cat3':cat==='Equipment'?'badge-cat2':cat==='ICT'?'badge-cat-ict':cat==='Office Supplies'?'badge-cat-office':'badge-cat1';
       return `<span class="badge ${cls}">${cat}</span>`;
     };
 
@@ -7307,7 +7322,7 @@ function toggleMoreDrawer() {
         variance > 0 ? 'background:rgba(212,147,10,0.15);color:var(--accent-amber)' :
                        'background:rgba(39,174,96,0.12);color:var(--accent-green)';
       const varText = variance === null ? '—' : (variance >= 0 ? '+' : '') + variance;
-      const catCls  = item.cat==='Safety'?'badge-cat3':item.cat==='Equipment'?'badge-cat2':item.cat==='ICT'?'badge-cat-ict':'badge-cat1';
+      const catCls  = item.cat==='Safety'?'badge-cat3':item.cat==='Equipment'?'badge-cat2':item.cat==='ICT'?'badge-cat-ict':item.cat==='Office Supplies'?'badge-cat-office':'badge-cat1';
       return `<div class="st-mc">
         <div class="st-mc-name">${item.name}</div>
         <div class="st-mc-nsn">${item.nsn} · <span class="badge ${catCls}" style="font-size:9px">${item.cat}</span></div>
@@ -7362,6 +7377,13 @@ function toggleMoreDrawer() {
   window.openModal = function(id) {
     _orig(id);
     initPhotoCapture();
+    // Auto-focus the NSN field when Add Item modal opens
+    if (id === 'modal-add-item') {
+      setTimeout(() => {
+        const nsn = document.getElementById('add-nsn');
+        if (nsn) nsn.focus();
+      }, 50);
+    }
   };
 })();
 
