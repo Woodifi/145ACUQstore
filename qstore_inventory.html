@@ -1209,7 +1209,18 @@
   .request-card .rc-title { font-family: var(--display); font-weight: 700; font-size: 13px; color: #5BA4D4; }
   .request-card .rc-meta  { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
 
-  /* AB189 line-item rows */
+  /* NSN suggestion dropdown */
+  .nsn-suggestion {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; cursor: pointer;
+    border-bottom: 1px solid rgba(59,74,47,0.2);
+    transition: background 0.1s;
+  }
+  .nsn-suggestion:last-child { border-bottom: none; }
+  .nsn-suggestion:hover, .nsn-suggestion.focused { background: rgba(196,169,107,0.1); }
+  .nsn-suggestion .ns-nsn  { font-family: var(--mono); font-size: 11px; color: var(--tan); min-width: 140px; flex-shrink: 0; }
+  .nsn-suggestion .ns-name { font-size: 13px; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nsn-suggestion .ns-cat  { font-family: var(--mono); font-size: 9px; color: var(--text-dim); flex-shrink: 0; }
   .req-line {
     display: flex; align-items: center; gap: 8px;
     background: rgba(0,0,0,0.15); border: 1px solid var(--panel-border);
@@ -2460,7 +2471,17 @@
       <div class="form-grid cols-2">
         <div class="form-group">
           <label class="form-label">NSN / Stores Code <span class="req">*</span></label>
-          <input type="text" class="form-input" id="add-nsn" placeholder="e.g. 8405-66-123-4567">
+          <div style="position:relative">
+            <input type="text" class="form-input" id="add-nsn"
+              placeholder="e.g. 8405-66-123-4567"
+              oninput="nsnInputHandler(this)"
+              onkeydown="nsnKeyHandler(event)"
+              autocomplete="off" spellcheck="false" autocorrect="off">
+            <div id="nsn-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;
+              background:var(--panel-bg);border:1px solid var(--tan);border-top:none;max-height:200px;overflow-y:auto;
+              box-shadow:0 6px 20px rgba(0,0,0,0.5)"></div>
+          </div>
+          <div id="nsn-format-hint" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:3px;min-height:12px"></div>
         </div>
         <div class="form-group">
           <label class="form-label">Category <span class="req">*</span></label>
@@ -4538,7 +4559,7 @@ function renderInventory() {
 // ===== ADD ITEM =====
 function addItem() {
   if (!AUTH.can('addItem')) { toast('Insufficient permissions.', 'err'); return; }
-  const nsn = document.getElementById('add-nsn').value.trim();
+  const nsn = formatNSN(document.getElementById('add-nsn').value.trim());
   const name = document.getElementById('add-name').value.trim();
   if (!nsn || !name) { toast('NSN and nomenclature are required.', 'err'); return; }
   const item = {
@@ -4562,6 +4583,11 @@ function addItem() {
   document.getElementById('add-onhand').value = 1;
   document.getElementById('add-auth').value = 1;
   clearPhotoPreview('add-photo-preview','add-photo-area','add-photo-clear-btn','add-photo-data');
+  // Clear NSN helper UI
+  const nsnHint = document.getElementById('nsn-format-hint');
+  if (nsnHint) { nsnHint.textContent = ''; }
+  const nsnBox = document.getElementById('nsn-suggestions');
+  if (nsnBox)  { nsnBox.style.display = 'none'; }
 }
 
 function openEditItem(idx) {
@@ -6501,6 +6527,170 @@ const CSV_TEMPLATES = {
   cadets: 'ServiceNumber,Rank,Surname,GivenName,Platoon,ShirtSize,TrouserSize,BootSize\n1234567,SGT,SMITH,John,1 Platoon,M,80R,10\n',
   loans:  'LoanRef,NSN,ItemName,Qty,BorrowerSvcNo,BorrowerName,Purpose,IssueDate,DueDate\nLN-2001,8405-66-013-4567,"Jacket DPCU",1,1234567,SGT SMITH,Annual Camp,2025-01-01,2025-01-14\n'
 };
+
+// ===== NSN FORMAT & PREFILL =====
+// NATO NSN format: XXXX-XX-XXX-XXXX (13 digits, groups 4-2-3-4)
+// Rule: if the raw value (stripped of hyphens/spaces) is exactly 13 decimal digits
+//       → store and display as XXXX-XX-XXX-XXXX.
+// Otherwise (alphanumeric, different length) → display as entered (custom designator).
+// Pre-existing data already in correct format is not modified.
+
+function formatNSN(raw) {
+  // Strip hyphens and spaces to get the digit/char sequence
+  const stripped = raw.replace(/[-\s]/g, '');
+  // Pure 13-digit numeric → standard NATO format
+  if (/^\d{13}$/.test(stripped)) {
+    return `${stripped.slice(0,4)}-${stripped.slice(4,6)}-${stripped.slice(6,9)}-${stripped.slice(9,13)}`;
+  }
+  // Anything else → return as entered (custom designator or partial entry)
+  return raw;
+}
+
+// Called oninput on the add-nsn field.
+// Auto-inserts hyphens as the user types purely numeric digits.
+// Leaves alphanumeric input completely untouched.
+let _nsnSugIdx = -1; // keyboard navigation index
+
+function nsnInputHandler(el) {
+  const raw     = el.value;
+  const stripped = raw.replace(/[-\s]/g, '');
+  const isNumeric = /^\d+$/.test(stripped);
+
+  // ── Auto-format purely numeric input ────────────────────────────────
+  if (isNumeric && stripped.length > 0) {
+    // Build formatted string by re-inserting hyphens at correct positions
+    // Hyphen positions (in the 13-digit sequence): after 4th, 6th, 9th digit
+    let formatted = stripped.slice(0, 4);
+    if (stripped.length > 4)  formatted += '-' + stripped.slice(4, 6);
+    if (stripped.length > 6)  formatted += '-' + stripped.slice(6, 9);
+    if (stripped.length > 9)  formatted += '-' + stripped.slice(9, 13);
+
+    // Only update the field value if it has actually changed (prevents cursor jump)
+    if (el.value !== formatted) {
+      const cursor = el.selectionStart;
+      el.value = formatted;
+      // Restore cursor — account for hyphens inserted before cursor position
+      const newCursor = formatted.length < cursor ? formatted.length : cursor;
+      try { el.setSelectionRange(newCursor, newCursor); } catch(_) {}
+    }
+
+    // Update the format hint
+    const hint = document.getElementById('nsn-format-hint');
+    if (hint) {
+      if (stripped.length === 13) {
+        hint.textContent = '✓ Standard NSN format — ready to save';
+        hint.style.color = 'var(--accent-green)';
+      } else {
+        hint.textContent = `Numeric: ${stripped.length}/13 digits`;
+        hint.style.color = 'var(--text-dim)';
+      }
+    }
+  } else if (stripped.length > 0) {
+    // Alphanumeric — custom designator, leave exactly as typed
+    const hint = document.getElementById('nsn-format-hint');
+    if (hint) {
+      hint.textContent = 'Custom designator — displayed as entered';
+      hint.style.color = 'var(--accent-amber)';
+    }
+  } else {
+    const hint = document.getElementById('nsn-format-hint');
+    if (hint) { hint.textContent = ''; }
+  }
+
+  // ── Suggestion dropdown ──────────────────────────────────────────────
+  _nsnSugIdx = -1;
+  _showNsnSuggestions(el.value);
+}
+
+function _showNsnSuggestions(query) {
+  const box = document.getElementById('nsn-suggestions');
+  if (!box) return;
+  if (!query || query.length < 2) { box.style.display = 'none'; return; }
+
+  const q = query.toLowerCase().replace(/[-\s]/g, '');
+
+  // Match against existing items by NSN prefix (stripped) or name prefix
+  const matches = state.items.filter(i => {
+    const nsnStripped = (i.nsn || '').replace(/[-\s]/g, '').toLowerCase();
+    return nsnStripped.startsWith(q) ||
+           (i.name || '').toLowerCase().includes(q) ||
+           nsnStripped.includes(q);
+  }).slice(0, 8); // cap at 8 suggestions
+
+  if (!matches.length) { box.style.display = 'none'; return; }
+
+  box.innerHTML = matches.map((item, idx) =>
+    `<div class="nsn-suggestion" data-idx="${idx}"
+          onmousedown="nsnSelectSuggestion(event,'${item.nsn.replace(/'/g,"\\'")}','${item.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${item.cat}')"
+          onmouseover="nsnHoverSuggestion(${idx})">
+      <span class="ns-nsn">${item.nsn}</span>
+      <span class="ns-name">${item.name}</span>
+      <span class="ns-cat">${item.cat}</span>
+    </div>`
+  ).join('');
+  box.style.display = 'block';
+}
+
+function nsnHoverSuggestion(idx) {
+  _nsnSugIdx = idx;
+  document.querySelectorAll('#nsn-suggestions .nsn-suggestion').forEach((el, i) => {
+    el.classList.toggle('focused', i === idx);
+  });
+}
+
+// Keyboard navigation in suggestion list
+function nsnKeyHandler(e) {
+  const box = document.getElementById('nsn-suggestions');
+  if (!box || box.style.display === 'none') return;
+  const items = box.querySelectorAll('.nsn-suggestion');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _nsnSugIdx = Math.min(_nsnSugIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('focused', i === _nsnSugIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _nsnSugIdx = Math.max(_nsnSugIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('focused', i === _nsnSugIdx));
+  } else if (e.key === 'Enter' && _nsnSugIdx >= 0) {
+    e.preventDefault();
+    items[_nsnSugIdx]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+  } else if (e.key === 'Escape') {
+    box.style.display = 'none';
+    _nsnSugIdx = -1;
+  }
+}
+
+// Called when user clicks or keyboard-selects a suggestion
+function nsnSelectSuggestion(e, nsn, name, cat) {
+  e.preventDefault(); // prevent focus loss from field
+  const nsnEl  = document.getElementById('add-nsn');
+  const nameEl = document.getElementById('add-name');
+  const catEl  = document.getElementById('add-cat');
+  const hint   = document.getElementById('nsn-format-hint');
+  const box    = document.getElementById('nsn-suggestions');
+
+  if (nsnEl)  nsnEl.value  = nsn;
+  if (nameEl && !nameEl.value) nameEl.value = name; // only pre-fill name if blank
+  if (catEl)  catEl.value  = cat;
+  if (box)    box.style.display = 'none';
+  if (hint) {
+    hint.textContent = '✓ Matched existing item — verify details before saving';
+    hint.style.color = 'var(--accent-green)';
+  }
+  // Move focus to name field so user can confirm/edit
+  if (nameEl) nameEl.focus();
+}
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', e => {
+  const box = document.getElementById('nsn-suggestions');
+  const inp = document.getElementById('add-nsn');
+  if (box && inp && !inp.contains(e.target) && !box.contains(e.target)) {
+    box.style.display = 'none';
+  }
+});
 
 // ===== PHOTO UPLOAD — INVENTORY ITEMS =====
 // Images are compressed to 120×120 JPEG thumbnails and stored as base64
