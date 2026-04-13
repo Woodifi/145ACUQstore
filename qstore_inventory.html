@@ -1210,7 +1210,69 @@
   .request-card .rc-title { font-family: var(--display); font-weight: 700; font-size: 13px; color: #5BA4D4; }
   .request-card .rc-meta  { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
 
-  /* NSN suggestion dropdown */
+  /* ── Grouped loan view ─────────────────────────────────────────── */
+  .loan-group-header {
+    background: rgba(59,74,47,0.45);
+    border-top: 2px solid var(--tan);
+  }
+  .loan-group-header td {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid var(--panel-border) !important;
+  }
+  .loan-group-header:first-child {
+    border-top: none;
+  }
+  .lgr-avatar {
+    width: 34px; height: 34px; border-radius: 2px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; font-weight: bold;
+    flex-shrink: 0; vertical-align: middle; margin-right: 10px;
+  }
+  .lgr-name {
+    font-family: var(--display); font-weight: 700; font-size: 14px;
+    letter-spacing: 1px; color: var(--text-primary); vertical-align: middle;
+  }
+  .lgr-meta {
+    font-family: var(--mono); font-size: 10px; color: var(--text-secondary);
+    vertical-align: middle; margin-left: 8px;
+  }
+  .lgr-pills {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  }
+  .lgr-count {
+    font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 2px;
+    background: rgba(36,113,163,0.2); border: 1px solid var(--accent-blue);
+    color: #5BA4D4;
+  }
+  .lgr-count.has-overdue {
+    background: rgba(192,57,43,0.2); border-color: var(--accent-red);
+    color: var(--accent-red);
+  }
+  .lgr-count.has-soon {
+    background: rgba(212,147,10,0.2); border-color: var(--accent-amber);
+    color: var(--accent-amber);
+  }
+  .loan-group-row td {
+    border-bottom: 1px solid rgba(59,74,47,0.18) !important;
+    background: transparent;
+  }
+  .loan-group-row:hover td { background: rgba(59,74,47,0.12) !important; }
+  .loan-group-spacer td {
+    padding: 4px !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  /* Return all button on group header */
+  .lgr-return-all {
+    font-family: var(--display); font-weight: 700; font-size: 10px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 2px; cursor: pointer;
+    background: rgba(212,147,10,0.15); border: 1px solid var(--accent-amber);
+    color: var(--accent-amber); white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .lgr-return-all:hover { background: rgba(212,147,10,0.3); }
   .nsn-suggestion {
     display: flex; align-items: center; gap: 10px;
     padding: 8px 12px; cursor: pointer;
@@ -1752,7 +1814,6 @@
               <th>NSN</th>
               <th>Item</th>
               <th>Qty</th>
-              <th>Borrower</th>
               <th>Purpose</th>
               <th>Issue Date</th>
               <th>Due Date</th>
@@ -4997,38 +5058,132 @@ function performReturn() {
 
 // ===== LOANS =====
 function renderLoans() {
-  const today = new Date().toISOString().slice(0,10);
-  const soon = new Date(); soon.setDate(soon.getDate() + 7);
-  const soonStr = soon.toISOString().slice(0,10);
-  const filter = document.getElementById('loan-filter').value;
-  const q = document.getElementById('loan-search').value.toLowerCase();
+  const today   = new Date().toISOString().slice(0, 10);
+  const soon    = new Date(); soon.setDate(soon.getDate() + 7);
+  const soonStr = soon.toISOString().slice(0, 10);
+  const filter  = document.getElementById('loan-filter').value;
+  const q       = document.getElementById('loan-search').value.toLowerCase();
 
   let loans = state.loans.filter(l => l.active);
-  if (filter === 'overdue') loans = loans.filter(l => l.dueDate < today);
-  if (filter === 'due-soon') loans = loans.filter(l => l.dueDate >= today && l.dueDate <= soonStr);
-  if (q) loans = loans.filter(l => l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) || l.nsn.includes(q) || l.ref.toLowerCase().includes(q) || (l.borrowerSvc || '').toLowerCase().includes(q));
+  if (filter === 'overdue')  loans = loans.filter(l => l.dueDate && l.dueDate < today);
+  if (filter === 'due-soon') loans = loans.filter(l => l.dueDate && l.dueDate >= today && l.dueDate <= soonStr);
+  if (q) loans = loans.filter(l =>
+    l.borrowerName.toLowerCase().includes(q) || l.itemName.toLowerCase().includes(q) ||
+    l.nsn.includes(q) || l.ref.toLowerCase().includes(q) ||
+    (l.borrowerSvc || '').toLowerCase().includes(q));
 
   const tbody = document.getElementById('loans-tbody');
-  tbody.innerHTML = loans.map(l => {
-    let statusCls = 'badge-on-loan';
-    let statusTxt = 'Active';
-    if (l.dueDate < today) { statusCls = 'badge-unserviceable'; statusTxt = 'OVERDUE'; }
-    else if (l.dueDate <= soonStr) { statusCls = 'badge-repair'; statusTxt = 'Due Soon'; }
-    return `<tr>
-      <td class="text-mono">${l.ref}</td>
-      <td class="nsn">${l.nsn}</td>
-      <td>${l.itemName}</td>
-      <td class="qty-cell" style="color:var(--accent-blue)">${l.qty}</td>
-      <td>${l.borrowerName}<br><span class="text-mono" style="font-size:10px;color:var(--text-secondary)">${l.borrowerSvc || ''}</span></td>
-      <td style="font-size:12px">${l.purpose}</td>
-      <td class="text-mono">${l.issueDate}</td>
-      <td class="text-mono ${l.dueDate < today ? 'text-red' : ''}">${l.dueDate}</td>
-      <td><span class="badge ${statusCls}">${statusTxt}</span></td>
-      <td>
-        <button class="btn btn-amber btn-sm" onclick="quickReturn('${l.ref}')">Return</button>
+
+  if (!loans.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:28px;font-family:var(--mono);font-size:12px">No active loans match filter.</td></tr>`;
+    return;
+  }
+
+  // ── Group loans by borrower ────────────────────────────────────────────
+  const groups = {};
+  loans.forEach(l => {
+    const key = l.borrowerSvc || l.borrowerName;
+    if (!groups[key]) {
+      groups[key] = {
+        svc:    l.borrowerSvc || '',
+        name:   l.borrowerName,
+        loans:  [],
+      };
+    }
+    groups[key].loans.push(l);
+  });
+
+  // ── Sort each borrower's loans by due date ascending ───────────────────
+  Object.values(groups).forEach(g => {
+    g.loans.sort((a, b) => (a.dueDate || '9999') < (b.dueDate || '9999') ? -1 : 1);
+    // Derive group-level status for sort priority
+    g.hasOverdue  = g.loans.some(l => l.dueDate && l.dueDate < today);
+    g.hasSoon     = !g.hasOverdue && g.loans.some(l => l.dueDate && l.dueDate <= soonStr);
+    g.totalQty    = g.loans.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+    // Lookup full cadet record for rank/platoon
+    const cadet   = state.cadets.find(c => c.svcNo === g.svc);
+    g.rank        = cadet?.rank || '';
+    g.plt         = cadet?.plt  || '';
+    g.personType  = cadet?.personType || 'cadet';
+  });
+
+  // ── Sort groups: overdue first, then due-soon, then active; then surname ─
+  const sortedGroups = Object.values(groups).sort((a, b) => {
+    const priority = (g) => g.hasOverdue ? 0 : g.hasSoon ? 1 : 2;
+    const pd = priority(a) - priority(b);
+    if (pd !== 0) return pd;
+    return a.name.localeCompare(b.name);
+  });
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  const statusBadge = (l) => {
+    if (l.dueDate && l.dueDate < today)   return `<span class="badge badge-unserviceable">OVERDUE</span>`;
+    if (l.dueDate && l.dueDate <= soonStr) return `<span class="badge badge-repair">Due Soon</span>`;
+    return `<span class="badge badge-on-loan">Active</span>`;
+  };
+
+  const roleColour = (g) => {
+    if (g.personType === 'staff') return 'rgba(212,147,10,0.3)';
+    return 'rgba(36,113,163,0.3)';
+  };
+  const roleText = (g) => g.personType === 'staff' ? 'STF' : 'CDT';
+
+  let html = '';
+
+  sortedGroups.forEach((g, gi) => {
+    // ── Spacer between groups (skip first) ────────────────────────────
+    if (gi > 0) {
+      html += `<tr class="loan-group-spacer"><td colspan="9"></td></tr>`;
+    }
+
+    // ── Group header row ──────────────────────────────────────────────
+    const overdueCount = g.loans.filter(l => l.dueDate && l.dueDate < today).length;
+    const soonCount    = g.loans.filter(l => l.dueDate && l.dueDate <= soonStr && !(l.dueDate < today)).length;
+    let countClass = 'lgr-count';
+    if (g.hasOverdue) countClass += ' has-overdue';
+    else if (g.hasSoon) countClass += ' has-soon';
+
+    const statusPills = overdueCount
+      ? `<span class="badge badge-unserviceable" style="font-size:9px">${overdueCount} OVERDUE</span>`
+      : soonCount
+      ? `<span class="badge badge-repair" style="font-size:9px">${soonCount} Due Soon</span>`
+      : '';
+
+    html += `<tr class="loan-group-header">
+      <td colspan="7">
+        <span class="lgr-avatar" style="background:${roleColour(g)};color:var(--tan)">${roleText(g)}</span>
+        <span class="lgr-name">${g.rank ? g.rank + ' ' : ''}${g.name}</span>
+        <span class="lgr-meta">${g.svc ? '· ' + g.svc : ''}${g.plt ? ' · ' + g.plt : ''}</span>
+        <span style="display:inline-flex;gap:6px;align-items:center;margin-left:14px;vertical-align:middle">
+          <span class="${countClass}">${g.loans.length} loan${g.loans.length !== 1 ? 's' : ''} · ${g.totalQty} item${g.totalQty !== 1 ? 's' : ''}</span>
+          ${statusPills}
+        </span>
+      </td>
+      <td colspan="2" style="text-align:right;vertical-align:middle">
+        <button class="lgr-return-all" onclick="returnAllForBorrower('${g.svc || g.name.replace(/'/g,"\\'")}')">↩ Return All</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:24px">No loans match filter.</td></tr>`;
+
+    // ── Loan rows for this borrower ───────────────────────────────────
+    g.loans.forEach(l => {
+      const ov = l.dueDate && l.dueDate < today;
+      html += `<tr class="loan-group-row">
+        <td class="text-mono" style="font-size:11px">${l.ref}</td>
+        <td class="nsn">${l.nsn}</td>
+        <td>${l.itemName}</td>
+        <td class="qty-cell" style="color:var(--accent-blue)">${l.qty}</td>
+        <td style="font-size:12px;color:var(--text-secondary)">${l.purpose}</td>
+        <td class="text-mono" style="font-size:11px">${l.issueDate}</td>
+        <td class="text-mono" style="font-size:11px;${ov ? 'color:var(--accent-red);font-weight:bold' : ''}">${l.dueDate || '—'}</td>
+        <td>${statusBadge(l)}</td>
+        <td>
+          <button class="btn btn-amber btn-sm" onclick="quickReturn('${l.ref}')">Return</button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
 }
 
 function quickReturn(ref) {
@@ -5042,6 +5197,25 @@ function quickReturn(ref) {
   logAudit('return', `${loan.ref}: ${loan.itemName} × ${loan.qty} returned by ${loan.borrowerName} (quick return)`);
   save(); renderAll();
   toast(`${loan.ref} marked as returned.`);
+}
+
+function returnAllForBorrower(svcOrName) {
+  const toReturn = state.loans.filter(l =>
+    l.active && (l.borrowerSvc === svcOrName || l.borrowerName === svcOrName));
+  if (!toReturn.length) { toast('No active loans found.', 'warn'); return; }
+  const name = toReturn[0].borrowerName;
+  if (!confirm(`Mark all ${toReturn.length} loan${toReturn.length !== 1 ? 's' : ''} for ${name} as returned?`)) return;
+  const today = new Date().toISOString().slice(0, 10);
+  toReturn.forEach(loan => {
+    loan.active = false;
+    loan.returnDate = today;
+    loan.returnCondition = 'serviceable';
+    const item = state.items.find(i => i.id === loan.itemId);
+    if (item) item.onLoan = Math.max(0, item.onLoan - loan.qty);
+    logAudit('return', `${loan.ref}: ${loan.itemName} × ${loan.qty} returned by ${loan.borrowerName} (bulk return)`);
+  });
+  save(); renderAll();
+  toast(`${toReturn.length} loan${toReturn.length !== 1 ? 's' : ''} returned for ${name}.`);
 }
 
 // ===== CADETS =====
@@ -5346,7 +5520,7 @@ function generateReport(type) {
       (overdue.length ? `<div class="alert-box danger mb-12"><div class="alert-title">⚠ ${overdue.length} Overdue Loan${overdue.length!==1?'s':''}</div>Items highlighted in red are past their return due date. Immediate follow-up required.</div>` : '') +
       `<table class="data-table">
         <thead><tr><th>Loan Ref</th><th>NSN</th><th>Item</th><th>Qty</th><th>Borrower</th><th>Svc No.</th><th>Purpose</th><th>Issue Date</th><th>Due Date</th><th>Status</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--text-dim)">No active loans.</td></tr>'}</tbody>
+        <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--text-dim)">No active loans.</td></tr>'}</tbody>
       </table>` +
       sigRow(sigBlock('QM Signature', `${s.qmRank||''} ${s.qmName||''}`.trim()), sigBlock('CO / OC Sighted')) + footer;
   }
